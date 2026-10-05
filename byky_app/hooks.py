@@ -290,10 +290,17 @@ fixtures = [
             ["name", "in", [
                 "RMS",
                 "Purchase",
-                "Manufacturing",
+                "Production",
                 "Maintenance",
                 "Scrap Sales"
             ]]
+        ]
+    },
+      # Print Formats
+    {
+        "dt": "Print Format",
+        "filters": [
+            ["module", "=", "Byky App"]
         ]
     },
 ]
