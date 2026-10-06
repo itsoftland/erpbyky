@@ -300,9 +300,7 @@ fixtures = [
       # Print Formats 
       
     {
-        "dt": "Print Format",
-        "filters": [
-            ["module", "=", "Byky App"]
-        ]
+    "dt": "Print Format",
+    "filters": [["standard", "=", "No"]]
     },
 ]
