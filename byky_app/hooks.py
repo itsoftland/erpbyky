@@ -249,12 +249,7 @@ app_license = "mit"
 
 fixtures = [
     # Custom DocTypes
-    {
-        "dt": "DocType",
-        "filters": [
-            ["custom", "=", 1]
-        ]
-    },
+   {"dt": "DocType", "filters": [["module", "=", "Byky App"], ["custom", "=", 1]]},
 
     # Custom Fields
     {
