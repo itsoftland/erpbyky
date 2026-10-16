@@ -248,7 +248,6 @@ app_license = "mit"
 # ignore_translatable_strings
 
 fixtures = [
-
     # Custom DocTypes
     {
         "dt": "DocType",
@@ -256,7 +255,6 @@ fixtures = [
             ["custom", "=", 1]
         ]
     },
-    
 
     # Custom Fields
     {
@@ -297,10 +295,20 @@ fixtures = [
             ]]
         ]
     },
-      # Print Formats 
-      
+
+    # Print Formats
     {
-    "dt": "Print Format",
-    "filters": [["standard", "=", "No"]]
+        "dt": "Print Format",
+        "filters": [
+            ["standard", "=", "No"]
+        ]
     },
 ]
+
+# Document Events
+doc_events = {
+    "Stock Entry": {
+        "on_submit": "byky_app.storage_location.update_item_storage_locations",
+        "on_cancel": "byky_app.storage_location.reverse_item_storage_locations",
+    }
+}

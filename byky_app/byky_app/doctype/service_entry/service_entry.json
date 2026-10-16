@@ -1,0 +1,143 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:service_id",
+ "creation": "2026-10-09 14:36:26.768899",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "service_id",
+  "company",
+  "service_date",
+  "done_by",
+  "service_at",
+  "stock_entry",
+  "service_status",
+  "column_break_rpgd",
+  "vehicle_number",
+  "complaint",
+  "service_remarks",
+  "spare_parts_section",
+  "serviced_items",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "service_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Service ID",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "service_date",
+   "fieldtype": "Date",
+   "label": "Service Date"
+  },
+  {
+   "fieldname": "done_by",
+   "fieldtype": "Link",
+   "label": "Done By",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "service_at",
+   "fieldtype": "Link",
+   "label": "Service At",
+   "options": "Warehouse"
+  },
+  {
+   "fieldname": "service_status",
+   "fieldtype": "Select",
+   "label": "Service Status",
+   "options": "Open\nIn Progress\nCompleted"
+  },
+  {
+   "fieldname": "column_break_rpgd",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "vehicle_number",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Vehicle Number",
+   "options": "Serial No",
+   "reqd": 1
+  },
+  {
+   "fieldname": "complaint",
+   "fieldtype": "Small Text",
+   "label": "Complaint"
+  },
+  {
+   "fieldname": "service_remarks",
+   "fieldtype": "Small Text",
+   "label": "Service Remarks"
+  },
+  {
+   "fieldname": "spare_parts_section",
+   "fieldtype": "Section Break",
+   "label": "Spare Parts"
+  },
+  {
+   "fieldname": "serviced_items",
+   "fieldtype": "Table",
+   "label": "Serviced Items",
+   "options": "Service Part"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "stock_entry",
+   "fieldtype": "Link",
+   "label": "Stock Entry",
+   "options": "Stock Entry"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Service Entry",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-10-16 11:19:55.368150",
+ "modified_by": "Administrator",
+ "module": "Byky App",
+ "name": "Service Entry",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "search_fields": "service_id, vehicle_number",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "service_id"
+}

@@ -1,0 +1,112 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:bin_name",
+ "creation": "2026-10-09 10:49:04.113700",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "bin_code",
+  "warehouse",
+  "area",
+  "rack",
+  "status",
+  "column_break_ixqy",
+  "bin_name",
+  "floor",
+  "shelf",
+  "capacity"
+ ],
+ "fields": [
+  {
+   "fieldname": "bin_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Bin Code",
+   "reqd": 1
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Warehouse",
+   "options": "Warehouse"
+  },
+  {
+   "fieldname": "area",
+   "fieldtype": "Link",
+   "label": "Area",
+   "options": "Storage Area"
+  },
+  {
+   "fieldname": "rack",
+   "fieldtype": "Link",
+   "label": "Rack",
+   "options": "Storage Rack"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Active\nInactive"
+  },
+  {
+   "fieldname": "column_break_ixqy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "bin_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Bin Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "floor",
+   "fieldtype": "Link",
+   "label": "Floor",
+   "options": "Floor Location"
+  },
+  {
+   "fieldname": "shelf",
+   "fieldtype": "Link",
+   "label": "Shelf",
+   "options": "Shelf"
+  },
+  {
+   "fieldname": "capacity",
+   "fieldtype": "Data",
+   "label": "Capacity"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-10-09 11:23:36.079134",
+ "modified_by": "Administrator",
+ "module": "Byky App",
+ "name": "Storage Bin",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "search_fields": "bin_code, bin_name",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "bin_code"
+}

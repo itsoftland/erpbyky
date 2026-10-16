@@ -1,0 +1,134 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:scrap_series",
+ "creation": "2026-10-09 10:00:24.810452",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "scrap_series",
+  "posting_date",
+  "scrap_item",
+  "uom",
+  "quantity",
+  "column_break_mnxm",
+  "reason",
+  "reported_by",
+  "approved_by",
+  "status",
+  "remarks",
+  "scrap_item_table_section",
+  "scrap_item_table"
+ ],
+ "fields": [
+  {
+   "fieldname": "scrap_series",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Scrap Series",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Posting Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "scrap_item",
+   "fieldtype": "Link",
+   "label": "Scrap Item",
+   "options": "Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "uom",
+   "fieldtype": "Link",
+   "label": "UOM",
+   "options": "UOM"
+  },
+  {
+   "fieldname": "quantity",
+   "fieldtype": "Float",
+   "label": "Quantity",
+   "non_negative": 1,
+   "precision": "2"
+  },
+  {
+   "fieldname": "column_break_mnxm",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Select",
+   "label": "Reason",
+   "options": "Damaged\nBroken\nExpired\nUnusable\nOther"
+  },
+  {
+   "fieldname": "reported_by",
+   "fieldtype": "Link",
+   "label": "Reported By",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "approved_by",
+   "fieldtype": "Link",
+   "label": "Approved By",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Draft\nPending\nApproved\nRejected"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "scrap_item_table_section",
+   "fieldtype": "Section Break",
+   "label": "Scrap Item Table"
+  },
+  {
+   "fieldname": "scrap_item_table",
+   "fieldtype": "Table",
+   "label": "Scrap Item Table",
+   "options": "Scrap Item"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-10-09 10:27:18.412329",
+ "modified_by": "Administrator",
+ "module": "Byky App",
+ "name": "Scrap",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "search_fields": "scrap_series, scrap_item",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "scrap_series"
+}
