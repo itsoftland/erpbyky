@@ -298,9 +298,30 @@ fixtures = [
             ["standard", "=", "No"]
         ]
     },
+      # Client Scripts
+    {
+        "dt": "Client Script",
+        "filters": [
+            ["name", "in", [
+                "Purchase Order Box wise Item fetching",
+                "Stock Entry Item Location",
+                "Box Entry",
+                "Vehicle Tear Down",
+                "Service Entry",    
+                "Purchase Order -- Default Warehouse"
+            ]]
+        ]
+    },
 ]
 
 # Document Events
+doc_events = {
+    "Stock Entry": {
+        "on_submit": "byky_app.storage_location.update_item_storage_locations",
+        "on_cancel": "byky_app.storage_location.reverse_item_storage_locations",
+    }
+}
+
 doc_events = {
     "Stock Entry": {
         "on_submit": "byky_app.storage_location.update_item_storage_locations",
