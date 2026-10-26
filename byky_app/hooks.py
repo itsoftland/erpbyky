@@ -298,6 +298,13 @@ fixtures = [
             ["standard", "=", "No"]
         ]
     },
+        # Web Pages
+    {
+        "dt": "Web Page",
+        "filters": [
+            ["route", "=", "item-storage-location"]
+        ]
+    },
       # Client Scripts
     {
         "dt": "Client Script",
@@ -307,8 +314,13 @@ fixtures = [
                 "Stock Entry Item Location",
                 "Box Entry",
                 "Vehicle Tear Down",
-                "Service Entry",    
-                "Purchase Order -- Default Warehouse"
+                "Service Entry",
+                "Purchase Order -- Default Warehouse",
+                "Stock Entry - Storage Location Items Autofetch",
+                "Work Order - Auto Set Warehouse Fields",
+                "Work Order Storage Location Auto Fill",
+                "Stock Entry Storage Location from Work Order",
+                "Item List Storage Button"
             ]]
         ]
     },
@@ -327,4 +339,14 @@ doc_events = {
         "on_submit": "byky_app.storage_location.update_item_storage_locations",
         "on_cancel": "byky_app.storage_location.reverse_item_storage_locations",
     }
+}
+
+doc_events = {
+    "Stock Entry": {
+        "on_submit": [
+            "byky_app.storage_location.update_item_storage_locations",
+            "byky_app.stock_ledger_location.apply_locations_to_ledger",
+        ],
+        "on_cancel": "byky_app.storage_location.reverse_item_storage_locations",
+    },
 }
