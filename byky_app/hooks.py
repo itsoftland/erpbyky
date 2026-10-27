@@ -311,16 +311,17 @@ fixtures = [
         "filters": [
             ["name", "in", [
                 "Purchase Order Box wise Item fetching",
-                "Stock Entry Item Location",
-                "Box Entry",
+                "Stock Entry Item Location",    
                 "Vehicle Tear Down",
                 "Service Entry",
-                "Purchase Order -- Default Warehouse",
-                "Stock Entry - Storage Location Items Autofetch",
+                "Purchase Order -- Default  Warehouse",
                 "Work Order - Auto Set Warehouse Fields",
                 "Work Order Storage Location Auto Fill",
                 "Stock Entry Storage Location from Work Order",
-                "Item List Storage Button"
+                "Item List Storage Button",
+                "Work Order Storage Location Cascading Filter",
+                "Item Storage Location Cascading Filter",
+                "Work Order Form Storage Button"
             ]]
         ]
     },
@@ -349,4 +350,41 @@ doc_events = {
         ],
         "on_cancel": "byky_app.storage_location.reverse_item_storage_locations",
     },
+}
+
+doc_events = {
+    "Stock Entry": {
+        "before_validate": "byky_app.storage_location.copy_work_order_storage_locations",
+        # keep your existing events here
+    }
+}
+
+
+# Only one doc_events block is allowed: Python keeps the last one defined.
+doc_events = {
+    "Stock Entry": {
+        "before_validate": "byky_app.storage_location.copy_work_order_storage_locations",
+        "on_submit": [
+            "byky_app.storage_location.update_item_storage_locations",
+            "byky_app.stock_ledger_location.apply_locations_to_ledger",
+        ],
+        "on_cancel": "byky_app.storage_location.reverse_item_storage_locations",
+    },
+}
+
+doc_events = {
+    "Stock Entry": {
+        "before_validate": (
+            "byky_app.storage_location."
+            "copy_work_order_storage_locations"
+        ),
+        "on_submit": (
+            "byky_app.storage_location."
+            "update_item_storage_locations"
+        ),
+        "on_cancel": (
+            "byky_app.storage_location."
+            "reverse_item_storage_locations"
+        ),
+    }
 }
