@@ -388,3 +388,16 @@ doc_events = {
         ),
     }
 }
+
+# Document Events
+# Only one doc_events block is allowed: Python keeps the last one defined.
+doc_events = {
+    "Stock Entry": {
+        "before_validate": "byky_app.storage_location.copy_work_order_storage_locations",
+        "on_submit": [
+            "byky_app.storage_location.update_item_storage_locations",
+            "byky_app.stock_ledger_location.apply_locations_to_ledger",
+        ],
+        "on_cancel": "byky_app.storage_location.reverse_item_storage_locations",
+    },
+}
