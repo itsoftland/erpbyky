@@ -14,11 +14,30 @@ ROW_ITEM = "item"
 ROW_WAREHOUSE = "warehouse"
 ROW_SHELF = "shelf"
 
-# Finished-goods warehouses require a warehouse only.
-# Storage Location rows, shelves, floors, areas, and racks are optional.
-FINISHED_GOODS_WAREHOUSES = {
-    "Bajaj Finished Goods - B",
-}
+
+# ------------------------------------------------------------------
+# FINISHED-GOODS WAREHOUSE DETECTION
+# ------------------------------------------------------------------
+
+def is_finished_goods_warehouse(doc, warehouse):
+    """
+    Identify the selected manufacturing target warehouse dynamically.
+
+    No hardcoded warehouse names or additional checkbox required.
+    """
+
+    if not warehouse or doc.purpose != "Manufacture":
+        return False
+
+    return any(
+        row.t_warehouse == warehouse
+        for row in (doc.get("items") or [])
+    )
+
+
+# ------------------------------------------------------------------
+# STORAGE LOCATION CONFIGURATION
+# ------------------------------------------------------------------
 
 # Fields used to identify a storage location uniquely.
 LOCATION_KEY_FIELDS = (
@@ -57,9 +76,9 @@ def apply_locations_to_ledger(doc, method=None):
         Validate storage locations and copy them to the
         corresponding Stock Ledger Entry child table.
 
-    Finished goods:
-        Only the standard warehouse is required.
+    Manufacturing target warehouse:
         Custom Storage Location rows are not required.
+        Shelf, floor, area, and rack details are optional.
     """
 
     # Skip custom processing for ordinary warehouse entries.
@@ -113,8 +132,9 @@ def apply_locations_to_ledger(doc, method=None):
         item = row.get(ROW_ITEM)
         warehouse = row.get(ROW_WAREHOUSE)
 
-        # Finished goods do not need custom Storage Location records.
-        if warehouse in FINISHED_GOODS_WAREHOUSES:
+        # Manufacturing target warehouse does not require
+        # custom Storage Location records in the Stock Ledger Entry.
+        if is_finished_goods_warehouse(doc, warehouse):
             continue
 
         # Find corresponding Stock Ledger Entries.
@@ -202,8 +222,8 @@ def _validate(doc, rows):
     Normal warehouses:
         Incoming items require a Storage Location row with a shelf.
 
-    Finished-goods warehouses:
-        Only the standard warehouse is required.
+    Manufacturing target warehouses:
+        Only the standard target warehouse is required.
         No custom Storage Location row or shelf is required.
     """
 
@@ -266,8 +286,9 @@ def _validate(doc, rows):
                 )
             )
 
-        # Finished goods require no shelf or other location details.
-        if warehouse in FINISHED_GOODS_WAREHOUSES:
+        # Manufacturing target warehouses require no shelf or
+        # other custom location details.
+        if is_finished_goods_warehouse(doc, warehouse):
             covered.add((item, warehouse))
             continue
 
@@ -282,11 +303,11 @@ def _validate(doc, rows):
         covered.add((item, warehouse))
 
     # Every incoming item must have a Storage Location row,
-    # except items entering a configured finished-goods warehouse.
+    # except items entering a manufacturing target warehouse.
     missing = {
         (item, warehouse)
         for item, warehouse in incoming
-        if warehouse not in FINISHED_GOODS_WAREHOUSES
+        if not is_finished_goods_warehouse(doc, warehouse)
         and (item, warehouse) not in covered
     }
 
