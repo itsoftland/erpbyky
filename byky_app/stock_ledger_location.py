@@ -6,7 +6,7 @@ from frappe import _
 # CONFIGURATION
 # ------------------------------------------------------------------
 
-FLAG = "custom_is_warehouse_storage"
+FLAG = "custom_is_warehouse_storage_"
 SE_TABLE = "custom_storage_location"
 SLE_TABLE = "custom_storage_location"
 

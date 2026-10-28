@@ -152,5 +152,38 @@
   "name": "Stock Entry Storage Location Cascading Filter",
   "script": "// Stock Entry: cascading location filter for the Storage Location table\n// Warehouse -> Floor -> Area -> Shelf -> Rack\n(function () {\n\nconst SE_LOCATION_TABLE = \"custom_storage_location\";\n\nfrappe.ui.form.on(\"Stock Entry\", {\n    setup(frm) {\n        frm.set_query(\"floor\", SE_LOCATION_TABLE, se_location_query([\"warehouse\"]));\n        frm.set_query(\"area\", SE_LOCATION_TABLE, se_location_query([\"warehouse\", \"floor\"]));\n        frm.set_query(\"shelf\", SE_LOCATION_TABLE, se_location_query([\"warehouse\", \"floor\", \"area\"]));\n        frm.set_query(\"rack\", SE_LOCATION_TABLE, se_location_query([\"warehouse\", \"floor\", \"area\", \"shelf\"]));\n\n        register_se_location_clear_events();\n    }\n});\n\n\n// Builds the filter: every field in the list must already be chosen in the row,\n// and the list shows only the records that belong to those values.\nfunction se_location_query(required_fields) {\n    return function (doc, cdt, cdn) {\n        const row = locals[cdt][cdn];\n        const filters = {};\n\n        for (const fieldname of required_fields) {\n            if (!row[fieldname]) {\n                return {\n                    filters: {\n                        name: [\"=\", \"__no_matching_location__\"]\n                    }\n                };\n            }\n\n            filters[fieldname] = row[fieldname];\n        }\n\n        return { filters };\n    };\n}\n\n\n// When a field changes, clear the fields below it.\nfunction register_se_location_clear_events() {\n    const df = frappe.meta.get_docfield(\"Stock Entry\", SE_LOCATION_TABLE);\n\n    if (!df) {\n        return;\n    }\n\n    window.__se_location_clear_registered = window.__se_location_clear_registered || {};\n\n    if (window.__se_location_clear_registered[df.options]) {\n        return;\n    }\n\n    window.__se_location_clear_registered[df.options] = true;\n\n    frappe.ui.form.on(df.options, {\n        warehouse(frm, cdt, cdn) {\n            clear_se_location_fields(frm, cdt, cdn, [\"floor\", \"area\", \"shelf\", \"rack\"]);\n        },\n\n        floor(frm, cdt, cdn) {\n            clear_se_location_fields(frm, cdt, cdn, [\"area\", \"shelf\", \"rack\"]);\n        },\n\n        area(frm, cdt, cdn) {\n            clear_se_location_fields(frm, cdt, cdn, [\"shelf\", \"rack\"]);\n        },\n\n        shelf(frm, cdt, cdn) {\n            clear_se_location_fields(frm, cdt, cdn, [\"rack\"]);\n        }\n    });\n}\n\n\nfunction clear_se_location_fields(frm, cdt, cdn, fields) {\n    if (frm.doctype !== \"Stock Entry\") {\n        return;\n    }\n\n    fields.forEach(fieldname => {\n        const row = locals[cdt][cdn];\n\n        if (row && row[fieldname]) {\n            frappe.model.set_value(cdt, cdn, fieldname, \"\");\n        }\n    });\n}\n\n})();\n// END OF SCRIPT",
   "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Storage Area",
+  "enabled": 1,
+  "modified": "2026-10-28 14:26:50.720312",
+  "module": "Byky App",
+  "name": "Storage Area — filter by Warehouse and Floor",
+  "script": "frappe.ui.form.on(\"Storage Area\", {\n    setup(frm) {\n        set_area_filters(frm);\n    },\n\n    refresh(frm) {\n        set_area_filters(frm);\n    },\n\n    warehouse(frm) {\n        // Clear the selected floor when the warehouse changes\n        frm.set_value(\"floor\", \"\");\n\n        set_area_filters(frm);\n    },\n\n    floor(frm) {\n        set_area_filters(frm);\n    }\n});\n\nfunction set_area_filters(frm) {\n    // Filter Floor according to the selected Warehouse\n    frm.set_query(\"floor\", function () {\n        let filters = {};\n\n        if (frm.doc.warehouse) {\n            filters.warehouse = frm.doc.warehouse;\n        }\n\n        return {\n            filters: filters\n        };\n    });\n}",
+  "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Shelf",
+  "enabled": 1,
+  "modified": "2026-10-28 14:22:19.970066",
+  "module": "Byky App",
+  "name": "Shelf — filter by Warehouse, Floor, and Area",
+  "script": "frappe.ui.form.on(\"Shelf\", {\n    warehouse(frm) {\n        frm.set_value(\"floor\", \"\");\n        frm.set_value(\"area\", \"\");\n        set_shelf_filters(frm);\n    },\n\n    floor(frm) {\n        frm.set_value(\"area\", \"\");\n        set_shelf_filters(frm);\n    },\n\n    refresh(frm) {\n        set_shelf_filters(frm);\n    }\n});\n\nfunction set_shelf_filters(frm) {\n    frm.set_query(\"floor\", function () {\n        return {\n            filters: {\n                warehouse: frm.doc.warehouse\n            }\n        };\n    });\n\n    frm.set_query(\"area\", function () {\n        return {\n            filters: {\n                warehouse: frm.doc.warehouse,\n                floor: frm.doc.floor\n            }\n        };\n    });\n}",
+  "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Storage Rack",
+  "enabled": 1,
+  "modified": "2026-10-28 14:23:07.749929",
+  "module": "Byky App",
+  "name": "Storage Rack — filter by Warehouse, Floor, Area, and Shelf",
+  "script": "frappe.ui.form.on(\"Storage Rack\", {\n    warehouse(frm) {\n        frm.set_value(\"floor\", \"\");\n        frm.set_value(\"area\", \"\");\n        frm.set_value(\"shelf\", \"\");\n        set_rack_filters(frm);\n    },\n\n    floor(frm) {\n        frm.set_value(\"area\", \"\");\n        frm.set_value(\"shelf\", \"\");\n        set_rack_filters(frm);\n    },\n\n    area(frm) {\n        frm.set_value(\"shelf\", \"\");\n        set_rack_filters(frm);\n    },\n\n    refresh(frm) {\n        set_rack_filters(frm);\n    }\n});\n\nfunction set_rack_filters(frm) {\n    frm.set_query(\"floor\", function () {\n        return {\n            filters: {\n                warehouse: frm.doc.warehouse\n            }\n        };\n    });\n\n    frm.set_query(\"area\", function () {\n        return {\n            filters: {\n                warehouse: frm.doc.warehouse,\n                floor: frm.doc.floor\n            }\n        };\n    });\n\n    frm.set_query(\"shelf\", function () {\n        return {\n            filters: {\n                warehouse: frm.doc.warehouse,\n                floor: frm.doc.floor,\n                area: frm.doc.area\n            }\n        };\n    });\n}",
+  "view": "Form"
  }
 ]

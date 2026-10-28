@@ -323,7 +323,10 @@ fixtures = [
                 "Item Storage Location Cascading Filter",
                 "Work Order Form Storage Button",
                 "Stock Entry Storage Location Cascading Filter",
-                "Stock Entry - Storage Location Items Autofetch"
+                "Stock Entry - Storage Location Items Autofetch",
+                "Storage Rack — filter by Warehouse, Floor, Area, and Shelf",
+                "Shelf — filter by Warehouse, Floor, and Area",
+                "Storage Area — filter by Warehouse and Floor"
             ]]
         ]
     },
@@ -402,4 +405,11 @@ doc_events = {
         ],
         "on_cancel": "byky_app.storage_location.reverse_item_storage_locations",
     },
+    "Service Entry": {
+            "on_submit": "byky_app.service_entry_stock.process_service_stock",
+            "on_cancel": "byky_app.service_entry_stock.reverse_service_stock",
+        },
 }
+
+
+    
