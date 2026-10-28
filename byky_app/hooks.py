@@ -321,7 +321,9 @@ fixtures = [
                 "Item List Storage Button",
                 "Work Order Storage Location Cascading Filter",
                 "Item Storage Location Cascading Filter",
-                "Work Order Form Storage Button"
+                "Work Order Form Storage Button",
+                "Stock Entry Storage Location Cascading Filter",
+                "Stock Entry - Storage Location Items Autofetch"
             ]]
         ]
     },

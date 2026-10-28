@@ -3,7 +3,7 @@ from frappe import _
 
 
 # ------------------------------------------------------------------
-# CONFIGURATION: CHANGE THESE IF YOUR FIELDNAMES ARE DIFFERENT
+# CONFIGURATION
 # ------------------------------------------------------------------
 
 FLAG = "custom_is_warehouse_storage"
@@ -13,6 +13,12 @@ SLE_TABLE = "custom_storage_location"
 ROW_ITEM = "item"
 ROW_WAREHOUSE = "warehouse"
 ROW_SHELF = "shelf"
+
+# Finished-goods warehouses require a warehouse only.
+# Storage Location rows, shelves, floors, areas, and racks are optional.
+FINISHED_GOODS_WAREHOUSES = {
+    "Bajaj Finished Goods - B",
+}
 
 # Fields used to identify a storage location uniquely.
 LOCATION_KEY_FIELDS = (
@@ -24,7 +30,7 @@ LOCATION_KEY_FIELDS = (
     "rack",
 )
 
-# Fields that must not be copied from one document to another.
+# Fields that must not be copied to another document.
 SKIP = {
     "name",
     "owner",
@@ -51,8 +57,9 @@ def apply_locations_to_ledger(doc, method=None):
         Validate storage locations and copy them to the
         corresponding Stock Ledger Entry child table.
 
-    Multiple different shelves and racks are supported.
-    Duplicate location rows are skipped.
+    Finished goods:
+        Only the standard warehouse is required.
+        Custom Storage Location rows are not required.
     """
 
     # Skip custom processing for ordinary warehouse entries.
@@ -86,7 +93,7 @@ def apply_locations_to_ledger(doc, method=None):
         for field in frappe.get_meta(child_dt).fields
     }
 
-    # Use only location fields that actually exist in the child DocType.
+    # Use only location fields supported by the child DocType.
     key_fields = [
         field
         for field in LOCATION_KEY_FIELDS
@@ -105,6 +112,10 @@ def apply_locations_to_ledger(doc, method=None):
 
         item = row.get(ROW_ITEM)
         warehouse = row.get(ROW_WAREHOUSE)
+
+        # Finished goods do not need custom Storage Location records.
+        if warehouse in FINISHED_GOODS_WAREHOUSES:
+            continue
 
         # Find corresponding Stock Ledger Entries.
         entries = frappe.get_all(
@@ -140,7 +151,7 @@ def apply_locations_to_ledger(doc, method=None):
             and value not in (None, "")
         }
 
-        # Identify this row's storage location.
+        # Identify this storage location.
         location_key = tuple(
             str(values.get(field) or "")
             for field in key_fields
@@ -161,7 +172,6 @@ def apply_locations_to_ledger(doc, method=None):
             )
 
             # Skip only if the same location already exists.
-            # Different shelves and racks remain permitted.
             duplicate = any(
                 tuple(
                     str(existing.get(field) or "")
@@ -189,8 +199,12 @@ def _validate(doc, rows):
     """
     Validate storage locations for Stock Entry.
 
-    Every item entering a warehouse must have a storage-location row
-    unless Is Warehouse storage is checked.
+    Normal warehouses:
+        Incoming items require a Storage Location row with a shelf.
+
+    Finished-goods warehouses:
+        Only the standard warehouse is required.
+        No custom Storage Location row or shelf is required.
     """
 
     moves = set()
@@ -222,7 +236,7 @@ def _validate(doc, rows):
                 )
             )
 
-    # Validate each storage-location row.
+    # Validate each provided Storage Location row.
     covered = set()
 
     for row in rows:
@@ -235,13 +249,6 @@ def _validate(doc, rows):
                 _(
                     "Row {0} (Storage Location): Item and Warehouse "
                     "are required."
-                ).format(row.idx)
-            )
-
-        if not row.get(ROW_SHELF):
-            frappe.throw(
-                _(
-                    "Row {0} (Storage Location): Shelf is required."
                 ).format(row.idx)
             )
 
@@ -259,10 +266,29 @@ def _validate(doc, rows):
                 )
             )
 
+        # Finished goods require no shelf or other location details.
+        if warehouse in FINISHED_GOODS_WAREHOUSES:
+            covered.add((item, warehouse))
+            continue
+
+        # Other warehouses require a shelf.
+        if not row.get(ROW_SHELF):
+            frappe.throw(
+                _(
+                    "Row {0} (Storage Location): Shelf is required."
+                ).format(row.idx)
+            )
+
         covered.add((item, warehouse))
 
-    # Every incoming item must have a storage-location row.
-    missing = incoming - covered
+    # Every incoming item must have a Storage Location row,
+    # except items entering a configured finished-goods warehouse.
+    missing = {
+        (item, warehouse)
+        for item, warehouse in incoming
+        if warehouse not in FINISHED_GOODS_WAREHOUSES
+        and (item, warehouse) not in covered
+    }
 
     if missing:
 
