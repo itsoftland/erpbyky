@@ -244,9 +244,18 @@ def _get_or_create_item(old_code, disposition):
         return existing
 
     new = frappe.copy_doc(old)
+
+    # Set the new Item identity and disposition Item Group.
     new.item_code = new_code
     new.item_name = new_name
     new.item_group = group
+
+    # IMPORTANT:
+    # frappe.copy_doc() also copies child tables from the original Item.
+    # Clear the original Item's Storage Location rows so the new
+    # Reusable/Scrap Item starts without locations belonging to another Item.
+    if new.meta.has_field("custom_storage_location"):
+        new.set("custom_storage_location", [])
     new.disabled = 0
     new.is_stock_item = 1
 

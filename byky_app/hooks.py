@@ -414,17 +414,17 @@ doc_events = {
         "on_cancel": "byky_app.storage_location.reverse_item_storage_locations",
     },
     "Service Entry": {
-    "before_submit": "byky_app.service_entry_stock.check_submit_status",
+        "before_submit": "byky_app.service_entry_stock.check_submit_status",
 
-    "on_submit": [
-        "byky_app.service_entry_stock.process_service_stock",
-        "byky_app.autocreate_tear_down_request.create_tear_down_request",
-    ],
+        "on_submit": [
+            "byky_app.service_entry_stock.process_service_stock",
+            "byky_app.autocreate_tear_down_request.create_tear_down_request",
+        ],
 
-    "on_update_after_submit": "byky_app.autocreate_tear_down_request.create_tear_down_request",
+        "on_update_after_submit": "byky_app.autocreate_tear_down_request.create_tear_down_request",
 
-    "on_cancel": "byky_app.service_entry_stock.reverse_service_stock",
-    },
+        "on_cancel": "byky_app.service_entry_stock.reverse_service_stock",
+        },
     "Vehicle Tear Down": {
         "validate": "byky_app.vehicle_tear_down.validate_vehicle_tear_down",
         "on_submit": "byky_app.vehicle_tear_down.process_vehicle_tear_down",
