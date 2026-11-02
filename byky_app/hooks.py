@@ -327,7 +327,7 @@ fixtures = [
                 "Storage Rack — filter by Warehouse, Floor, Area, and Shelf",
                 "Shelf — filter by Warehouse, Floor, and Area",
                 "Storage Area — filter by Warehouse and Floor",
-                "Service Entry Serviced Items Cascading Filter ",#
+                "Service Entry Serviced Items Cascading Filter",
                 "Tear Down Serviced Items Cascading Filter",
                 "Vehicle Tear Down - Auto Fetch Vehicle Details",
                 "Service Request - Vehicle Details Auto Fetch",
