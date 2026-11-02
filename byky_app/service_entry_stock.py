@@ -2,6 +2,9 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
+# same helper and Item Group names the Vehicle Tear Down uses
+from byky_app.vehicle_tear_down import DISPOSITION_GROUP, _get_or_create_item
+
 # ------------------------------------------------------------------
 # CHANGE THESE TO YOUR REAL FIELDNAMES (Customize Form / DocType)
 # ------------------------------------------------------------------
@@ -32,7 +35,16 @@ DAMAGED = {                                  # fields in the Damaged Items table
 STORAGE_TABLE = "custom_storage_location"        # Storage Location table on Stock Entry
 WAREHOUSE_FLAG = "custom_is_warehouse_storage_"   # "Is Warehouse storage" checkbox on Stock Entry
 REQUIRE_SHELF = True                         # every used part must say which shelf it came from
-        
+SUBMIT_ALLOWED_STATUS = ("completed", "non-repairable")  # Service Status values that allow the Service Entry to be submitted (lower case)
+
+def check_submit_status(doc, method=None):
+    """Service Entry before_submit: allow Submit only for Completed or Non-repairable."""
+    status = (doc.get("service_status") or "").strip().lower()
+
+    if status not in SUBMIT_ALLOWED_STATUS:
+        frappe.throw(
+            _("A Service Entry can be submitted only when Service Status is Completed or Non-repairable.")
+        )
 
 def process_service_stock(doc, method=None):
     """Service Entry on_submit: issue the used parts, receive the damaged parts into scrap."""
@@ -54,14 +66,15 @@ def process_service_stock(doc, method=None):
         name = _post_issue(doc, used, company)
         doc.db_set(SE["issue_link"], name, update_modified=False)
 
-    # 2. damaged parts -> Material Receipt into the scrap warehouse
+    # 2. damaged parts -> Material Receipt of NEW scrap items into the scrap warehouse
     if damaged and not doc.get(SE["scrap_link"]):
         name = _post_scrap(doc, damaged, company)
         doc.db_set(SE["scrap_link"], name, update_modified=False)
 
 
 def reverse_service_stock(doc, method=None):
-    """Service Entry on_cancel: cancel the Stock Entries it created (scrap first)."""
+    """Service Entry on_cancel: cancel the Stock Entries it created (scrap first).
+    The scrap items created for damaged parts stay in the Item master."""
     for key in ("scrap_link", "issue_link"):
         name = doc.get(SE[key])
         if name and frappe.db.get_value("Stock Entry", name, "docstatus") == 1:
@@ -92,15 +105,23 @@ def _post_issue(doc, rows, company):
 
 
 def _post_scrap(doc, rows, company):
+    """Receive the damaged parts as NEW items in the Scrap Item Group, valued at zero."""
     warehouse = doc.get(SE["scrap_warehouse"])
     se = _new_stock_entry(doc, "Material Receipt", company)
 
     if se.meta.has_field(WAREHOUSE_FLAG):
         se.set(WAREHOUSE_FLAG, 1)            # plain warehouse entry, no shelf needed for scrap
 
+    scrap_items = {}                         # damaged item -> its scrap item
+
     for r in rows:
+        damaged_item = r.get(DAMAGED["item"])
+
+        if damaged_item not in scrap_items:
+            scrap_items[damaged_item] = _scrap_item(damaged_item)
+
         se.append("items", {
-            "item_code": r.get(DAMAGED["item"]),
+            "item_code": scrap_items[damaged_item],
             "qty": flt(r.get(DAMAGED["qty"])),
             "t_warehouse": warehouse,
             "basic_rate": 0,
@@ -108,6 +129,15 @@ def _post_scrap(doc, rows, company):
         })
 
     return _post(se)
+
+
+def _scrap_item(item):
+    """The item to post for a damaged part: a '<item> - Scrap' item in the Scrap Item Group."""
+    # already a scrap item (picked directly): do not create "X - Scrap - Scrap"
+    if frappe.db.get_value("Item", item, "item_group") == DISPOSITION_GROUP["scrap"]:
+        return item
+
+    return _get_or_create_item(item, "scrap")
 
 
 def _location_row(se, row, item, warehouse, qty):

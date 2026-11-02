@@ -326,7 +326,15 @@ fixtures = [
                 "Stock Entry - Storage Location Items Autofetch",
                 "Storage Rack — filter by Warehouse, Floor, Area, and Shelf",
                 "Shelf — filter by Warehouse, Floor, and Area",
-                "Storage Area — filter by Warehouse and Floor"
+                "Storage Area — filter by Warehouse and Floor",
+                "Service Entry Serviced Items Cascading Filter",
+                "Tear Down Serviced Items Cascading Filter",
+                "Vehicle Tear Down - Auto Fetch Vehicle Details",
+                "Service Request - Vehicle Details Auto Fetch",
+                "Service Entry button for the Service Request form",
+                "Service Entry - Submit Only When Completed",
+                "Service Entry - Sync Serviced Items to Damaged Items",
+                "Vehicle Tear Down Request - Create Tear Down Button"
             ]]
         ]
     },
@@ -406,10 +414,24 @@ doc_events = {
         "on_cancel": "byky_app.storage_location.reverse_item_storage_locations",
     },
     "Service Entry": {
-            "on_submit": "byky_app.service_entry_stock.process_service_stock",
-            "on_cancel": "byky_app.service_entry_stock.reverse_service_stock",
-        },
+    "before_submit": "byky_app.service_entry_stock.check_submit_status",
+
+    "on_submit": [
+        "byky_app.service_entry_stock.process_service_stock",
+        "byky_app.autocreate_tear_down_request.create_tear_down_request",
+    ],
+
+    "on_update_after_submit": "byky_app.autocreate_tear_down_request.create_tear_down_request",
+
+    "on_cancel": "byky_app.service_entry_stock.reverse_service_stock",
+    },
+    "Vehicle Tear Down": {
+        "validate": "byky_app.vehicle_tear_down.validate_vehicle_tear_down",
+        "on_submit": "byky_app.vehicle_tear_down.process_vehicle_tear_down",
+        "on_cancel": "byky_app.vehicle_tear_down.reverse_vehicle_tear_down",
+    }
 }
+
 
 
     

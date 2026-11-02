@@ -10,7 +10,7 @@ def get_item_storage_summary(search_text=None):
     if not frappe.has_permission("Item", "read"):
         frappe.throw("You do not have permission to view Items.")
 
-    locations = frappe.get_all(
+    all_locations = frappe.get_all(
         "Storage Location",
         filters={
             "parenttype": "Item",
@@ -30,6 +30,14 @@ def get_item_storage_summary(search_text=None):
         order_by="parent asc",
     )
 
+    # Count a row only for the Item that owns it. Rows copied onto another
+    # Item (for example "Dio Tyre - Scrap") that still point to the
+    # original item are skipped.
+    locations = [
+        row for row in all_locations
+        if not row.item or row.item == row.parent
+    ]
+
     search_text = (search_text or "").strip().lower()
     results = []
 
@@ -38,7 +46,7 @@ def get_item_storage_summary(search_text=None):
     totals = {}
 
     for row in locations:
-        item_code = row.item or row.parent
+        item_code = row.parent
 
         if item_code not in item_info:
             item_info[item_code] = frappe.db.get_value(
@@ -52,7 +60,7 @@ def get_item_storage_summary(search_text=None):
         )
 
     for row in locations:
-        item_code = row.item or row.parent
+        item_code = row.parent
         item_name = item_info.get(item_code, "")
 
         if search_text and (
