@@ -284,5 +284,16 @@
   "name": "Service Entry - Filter Spares by Box Items",
   "script": "frappe.ui.form.on('Service Entry', {\n    setup(frm) {\n        // Only show spares that belong to the selected vehicle's box items\n        frm.set_query('item', 'serviced_items', function () {\n            return {\n                filters: {\n                    name: ['in', frm._box_items || []]\n                }\n            };\n        });\n\n        // Set UOM when an item is picked in a serviced_items row\n        const child_dt = frappe.meta.get_docfield('Service Entry', 'serviced_items').options;\n        frappe.ui.form.on(child_dt, {\n            item(frm, cdt, cdn) {\n                set_row_uom(frm, cdt, cdn);\n            }\n        });\n    },\n\n    refresh(frm) {\n        load_box_items(frm);\n    },\n\n    item(frm) {\n        // Vehicle changed: reload the allowed spares and clear rows that are no longer valid\n        load_box_items(frm).then(() => {\n            (frm.doc.serviced_items || []).forEach(row => {\n                if (row.item && !frm._box_items.includes(row.item)) {\n                    frappe.model.set_value(row.doctype, row.name, 'item', null);\n                }\n            });\n        });\n    }\n});\n\nfunction load_box_items(frm) {\n    frm._box_rows = [];\n    frm._box_items = [];\n    if (!frm.doc.item) return Promise.resolve();\n\n    return frappe.db.get_doc('Item', frm.doc.item).then(doc => {\n        frm._box_rows = doc.custom_box_items || [];\n        frm._box_items = frm._box_rows\n            .map(r => r.item || r.item_code)\n            .filter(Boolean);\n    });\n}\n\nfunction set_row_uom(frm, cdt, cdn) {\n    const row = locals[cdt][cdn];\n\n    if (!row.item) {\n        frappe.model.set_value(cdt, cdn, 'uom', null);\n        return;\n    }\n\n    // 1) Use the UOM defined in the vehicle's box items (Inside Items) if present\n    const box_row = (frm._box_rows || []).find(r => (r.item || r.item_code) === row.item);\n    if (box_row && box_row.uom) {\n        frappe.model.set_value(cdt, cdn, 'uom', box_row.uom);\n        return;\n    }\n\n    // 2) Otherwise fall back to the item's stock UOM\n    frappe.db.get_value('Item', row.item, 'stock_uom').then(r => {\n        frappe.model.set_value(cdt, cdn, 'uom', r.message.stock_uom);\n    });\n}",
   "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Service Entry",
+  "enabled": 1,
+  "modified": "2026-11-03 11:05:06.233606",
+  "module": "Byky App",
+  "name": "Service Entry - Vehicle Transfer",
+  "script": "frappe.ui.form.on('Service Entry', {\n    setup(frm) {\n        frm.set_query('transfer_warehouse', () => ({\n            filters: { is_group: 0, company: frm.doc.company }\n        }));\n    },\n    before_save(frm) {\n        frm._had_transfer = !!frm.doc.stock_transfer;\n    },\n    after_save(frm) {\n        if (frm.doc.service_type === 'Major Repair' && frm.doc.stock_transfer && !frm._had_transfer) {\n            frappe.set_route('Form', 'Stock Entry', frm.doc.stock_transfer);\n        }\n    },\n    service_type(frm) {\n        if (frm.doc.service_type !== 'Major Repair' && !frm.doc.stock_transfer) {\n            frm.set_value('transfer_warehouse', '');\n        }\n    }\n});",
+  "view": "Form"
  }
 ]

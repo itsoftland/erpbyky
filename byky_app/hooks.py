@@ -335,7 +335,8 @@ fixtures = [
                 "Service Entry - Submit Only When Completed",
                 "Service Entry - Sync Serviced Items to Damaged Items",
                 "Vehicle Tear Down Request - Create Tear Down Button",
-                "Service Entry - Filter Spares by Box Items"
+                "Service Entry - Filter Spares by Box Items",
+                "Service Entry - Vehicle Transfer"
             ]]
         ]
     },
