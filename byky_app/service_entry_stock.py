@@ -15,7 +15,11 @@ SE = {                                       # fields on Service Entry
     "scrap_warehouse": "scrap_warehouse",    # field "Scrap Warehouse"
     "company": "company",
     "issue_link": "stock_entry",             # Link to Stock Entry: the parts issue
-    "scrap_link": "scrap_stock_entry",       # Link to Stock Entry: the scrap receipt (add this field)
+    "scrap_link": "scrap_stock_entry",       # Link to Stock Entry: the scrap receipt
+    "vehicle": "vehicle_number",             # Vehicle Number (Link to Serial No)
+    "service_type": "service_type",          # Service Type select (Regular / Major Repair)
+    "transfer_link": "stock_transfer",       # Link to Stock Entry (read-only): the vehicle transfer
+    "transfer_warehouse": "transfer_warehouse",  # Link to Warehouse: where the vehicle goes
 }
 USED = {                                     # fields in the Serviced Items table
     "item": "item",
@@ -35,15 +39,20 @@ DAMAGED = {                                  # fields in the Damaged Items table
 STORAGE_TABLE = "custom_storage_location"        # Storage Location table on Stock Entry
 WAREHOUSE_FLAG = "custom_is_warehouse_storage_"   # "Is Warehouse storage" checkbox on Stock Entry
 REQUIRE_SHELF = True                         # every used part must say which shelf it came from
-SUBMIT_ALLOWED_STATUS = ("completed", "non-repairable")  # Service Status values that allow the Service Entry to be submitted (lower case)
+SUBMIT_ALLOWED_STATUS = ("completed", "non-repairable")  # Service Status values that allow Submit (lower case)
 
 SERVICE_REQUEST_FIELD = "service_id"         # field on Service Entry linking to the Service Request (e.g. SR-023)
 SR_STATUS_ON_SUBMIT = "Closed"               # Service Request status after the Service Entry is submitted
 SR_STATUS_ON_CANCEL = "Open"                 # status restored if the Service Entry is cancelled
 
+MAJOR_REPAIR = "Major Repair"                # Service Type that triggers the vehicle transfer
+
 
 def check_submit_status(doc, method=None):
-    """Service Entry before_submit: allow Submit only for Completed or Non-repairable."""
+    """Service Entry before_submit: the vehicle transfer must be submitted first (Major Repair),
+    and the Service Status must be Completed or Non-repairable."""
+    check_vehicle_transfer_submitted(doc)
+
     status = (doc.get("service_status") or "").strip().lower()
 
     if status not in SUBMIT_ALLOWED_STATUS:
@@ -89,6 +98,137 @@ def reverse_service_stock(doc, method=None):
             se.cancel()
 
 
+# ------------------------------------------------------------------
+# Major Repair -> DRAFT Material Transfer of the vehicle; the user submits it
+# ------------------------------------------------------------------
+def sync_vehicle_transfer(doc, method=None):
+    """Service Entry on_update (every save):
+    - Major Repair + Transfer To Warehouse selected, no transfer yet -> create a DRAFT transfer
+    - draft transfer exists -> keep its target warehouse in step, or delete it if no longer needed
+    - submitted transfer + Service Type back to Regular -> cancel it"""
+    if doc.docstatus != 0:
+        return
+
+    is_major = doc.get(SE["service_type"]) == MAJOR_REPAIR
+    target = doc.get(SE["transfer_warehouse"])
+    existing = doc.get(SE["transfer_link"])
+
+    if not existing:
+        if is_major and target:
+            _create_transfer_draft(doc, target)
+        return
+
+    status = frappe.db.get_value("Stock Entry", existing, "docstatus")
+
+    if status is None or status == 2:                 # deleted or cancelled elsewhere: allow a new one
+        doc.db_set(SE["transfer_link"], None, update_modified=False)
+        if is_major and target:
+            _create_transfer_draft(doc, target)
+    elif status == 0:                                 # still a draft
+        if not is_major or not target:
+            _delete_draft(doc, existing)
+        else:
+            _update_draft_target(existing, target)
+    elif status == 1 and not is_major:                # already submitted, but service is now Regular
+        reverse_vehicle_transfer(doc)
+        doc.db_set(SE["transfer_link"], None, update_modified=False)
+
+
+def _create_transfer_draft(doc, target):
+    """Create (but do NOT submit) the Material Transfer of the vehicle."""
+    serial_no = doc.get(SE["vehicle"])
+    if not serial_no:
+        frappe.throw(_("Vehicle Number is required to transfer the vehicle."))
+
+    sn = frappe.db.get_value("Serial No", serial_no, ["item_code", "warehouse"], as_dict=True)
+    if not sn or not sn.warehouse:
+        frappe.throw(_("Vehicle {0} is not in any warehouse.").format(serial_no))
+
+    _check_leaf_warehouse(target, _("Transfer To Warehouse"))
+    _check_leaf_warehouse(sn.warehouse, _("Vehicle warehouse"))
+
+    if sn.warehouse == target:
+        frappe.throw(_("Vehicle {0} is already in {1}.").format(serial_no, target))
+
+    se = _new_stock_entry(doc, "Material Transfer", _company(doc, []))
+
+    if se.meta.has_field(WAREHOUSE_FLAG):
+        se.set(WAREHOUSE_FLAG, 1)                     # plain warehouse transfer, no shelf rows
+
+    se.append("items", {
+        "item_code": sn.item_code,
+        "s_warehouse": sn.warehouse,
+        "t_warehouse": target,
+        "qty": 1,
+        "serial_no": serial_no,
+        "use_serial_batch_fields": 1,
+    })
+
+    se.flags.ignore_permissions = True
+    se.insert()                                       # draft only: the user submits it
+
+    doc.db_set(SE["transfer_link"], se.name, update_modified=False)
+    frappe.msgprint(
+        _("Stock Entry {0} created. Submit it to move the vehicle to {1}.").format(se.name, target),
+        alert=True,
+    )
+
+
+def _update_draft_target(name, target):
+    """Keep the draft transfer's target warehouse equal to Transfer To Warehouse."""
+    se = frappe.get_doc("Stock Entry", name)
+    if all(r.t_warehouse == target for r in se.items):
+        return
+    _check_leaf_warehouse(target, _("Transfer To Warehouse"))
+    for r in se.items:
+        r.t_warehouse = target
+    se.flags.ignore_permissions = True
+    se.save()
+
+
+def _delete_draft(doc, name):
+    doc.db_set(SE["transfer_link"], None, update_modified=False)   # remove the link first
+    frappe.delete_doc("Stock Entry", name, ignore_permissions=True, force=1)
+
+
+def _check_leaf_warehouse(warehouse, label):
+    """Stock can only move between non-group warehouses."""
+    if frappe.db.get_value("Warehouse", warehouse, "is_group"):
+        frappe.throw(_("{0} {1} is a group warehouse. Choose a non-group warehouse.").format(label, warehouse))
+
+
+def check_vehicle_transfer_submitted(doc):
+    """A Major Repair Service Entry can only be submitted after its transfer Stock Entry is submitted."""
+    if doc.get(SE["service_type"]) != MAJOR_REPAIR:
+        return
+
+    name = doc.get(SE["transfer_link"])
+    if not name:
+        frappe.throw(_("Select the Transfer To Warehouse and save to create the vehicle transfer."))
+
+    if frappe.db.get_value("Stock Entry", name, "docstatus") != 1:
+        frappe.throw(
+            _("Submit the vehicle transfer Stock Entry {0} before continuing the service.").format(name)
+        )
+
+
+def reverse_vehicle_transfer(doc, method=None):
+    """Service Entry on_cancel / on_trash: undo the vehicle transfer (cancel it, or delete the draft)."""
+    name = doc.get(SE["transfer_link"])
+    if not name:
+        return
+
+    status = frappe.db.get_value("Stock Entry", name, "docstatus")
+    if status == 1:
+        se = frappe.get_doc("Stock Entry", name)
+        se.flags.ignore_permissions = True
+        se.flags.ignore_links = True
+        se.cancel()
+    elif status == 0:
+        _delete_draft(doc, name)
+
+
+# ------------------------------------------------------------------
 def close_service_request(doc, method=None):
     """Service Entry on_submit: set the linked Service Request status to Closed."""
     _set_service_request_status(doc, SR_STATUS_ON_SUBMIT)

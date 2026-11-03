@@ -351,20 +351,24 @@ doc_events = {
         ],
         "on_cancel": "byky_app.storage_location.reverse_item_storage_locations",
     },
-    "Service Entry": {
-        "before_submit": "byky_app.service_entry_stock.check_submit_status",
-        "on_submit": [
-            "byky_app.service_entry_stock.process_service_stock",
-            "byky_app.autocreate_tear_down_request.create_tear_down_request",
-            "byky_app.service_entry_stock.close_service_request",
-        ],
-       "on_cancel": [
-            "byky_app.service_entry_stock.reverse_service_stock",
-            "byky_app.service_entry_stock.reopen_service_request",
-        ],
-        
-    },
-        "Vehicle Tear Down": {
+    
+  "Service Entry": {
+    "before_submit": "byky_app.service_entry_stock.check_submit_status",
+    "on_update": "byky_app.service_entry_stock.sync_vehicle_transfer",
+    "on_submit": [
+        "byky_app.service_entry_stock.process_service_stock",
+        "byky_app.autocreate_tear_down_request.create_tear_down_request",
+        "byky_app.service_entry_stock.close_service_request",
+    ],
+    "on_cancel": [
+        "byky_app.service_entry_stock.reverse_service_stock",
+        "byky_app.service_entry_stock.reopen_service_request",
+        "byky_app.service_entry_stock.reverse_vehicle_transfer",
+    ],
+    "on_trash": "byky_app.service_entry_stock.reverse_vehicle_transfer",
+},
+   
+    "Vehicle Tear Down": {
         "validate": "byky_app.vehicle_tear_down.validate_vehicle_tear_down",
         "on_update": "byky_app.vehicle_tear_down.close_tear_down_request",
         "on_submit": "byky_app.vehicle_tear_down.process_vehicle_tear_down",

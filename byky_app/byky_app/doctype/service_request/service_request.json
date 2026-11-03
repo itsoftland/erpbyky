@@ -51,7 +51,8 @@
   {
    "fieldname": "complaint_type",
    "fieldtype": "Select",
-   "label": "Complaint Type"
+   "label": "Complaint Type",
+   "options": "Regular\nMajor Repair"
   },
   {
    "fieldname": "compliant_details",
@@ -70,7 +71,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-11-03 08:40:17.339984",
+ "modified": "2026-11-03 11:13:23.542836",
  "modified_by": "Administrator",
  "module": "Byky App",
  "name": "Service Request",
