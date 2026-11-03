@@ -17,6 +17,8 @@ VT = {                                       # fields on Vehicle Tear Down
     "vehicle_link": "vehicle_stock_entry",   # Link to Stock Entry: vehicle issue
     "reusable_link": "reusable_stock_entry", # Link to Stock Entry: reusable receipt
     "scrap_link": "scrap_stock_entry",       # Link to Stock Entry: scrap receipt
+    "request_id": "id",                      # holds the Vehicle Tear Down Request name (e.g. VTDR-03-11-2026-001)
+    "service": "vehicle_service",            # the Service Entry / Service Id (e.g. SR-025)
 }
 PART = {                                     # fields in the Recovered Parts table
     "item": "item_code",
@@ -39,6 +41,13 @@ WAREHOUSE_FLAG = "custom_is_warehouse_storage_"   # "Is Warehouse storage" check
 REQUIRE_SHELF = True                         # every reusable part must say which shelf it goes to
 ISSUE_VEHICLE = True                         # post a Material Issue that removes the vehicle from stock
 SPREAD_VEHICLE_VALUE = True                  # reusable parts carry the vehicle's value; scrap is zero
+
+# Vehicle Tear Down Request (closed when the Vehicle Tear Down is saved)
+REQUEST_DOCTYPE = "Vehicle Tear Down Request"
+REQUEST_SERVICE_FIELD = "service_id"         # field on the request holding the Service Id (fallback lookup)
+REQUEST_STATUS_FIELD = "status"
+REQUEST_STATUS_CLOSED = "Closed"
+REQUEST_STATUS_OPEN = "Open"
 
 # Item Group of the NEW item created for each Disposition.
 # The names must match your Item Group records exactly.
@@ -190,6 +199,47 @@ def validate_vehicle_tear_down(doc, method=None):
 
     if doc.docstatus == 0 and serial_no:
         _check_vehicle_available(serial_no)
+
+
+# ==================================================================
+# VEHICLE TEAR DOWN REQUEST STATUS
+# ==================================================================
+
+def _find_tear_down_request(doc):
+    """The request this tear down came from: by the ID field, else by the Service Id."""
+    request = doc.get(VT["request_id"])
+
+    if request and frappe.db.exists(REQUEST_DOCTYPE, request):
+        return request
+
+    service = doc.get(VT["service"])
+    if service:
+        return frappe.db.get_value(REQUEST_DOCTYPE, {REQUEST_SERVICE_FIELD: service}, "name")
+
+    return None
+
+
+def close_tear_down_request(doc, method=None):
+    """Vehicle Tear Down on_update: close the Vehicle Tear Down Request it came from."""
+    request = _find_tear_down_request(doc)
+
+    if not request:
+        frappe.log_error(
+            "No {0} found for Vehicle Tear Down {1}".format(REQUEST_DOCTYPE, doc.name),
+            "Tear Down Request status update",
+        )
+        return
+
+    frappe.db.set_value(REQUEST_DOCTYPE, request, REQUEST_STATUS_FIELD, REQUEST_STATUS_CLOSED)
+
+
+def reopen_tear_down_request(doc, method=None):
+    """Vehicle Tear Down on_cancel: put the request back to Open."""
+    request = _find_tear_down_request(doc)
+
+    if request:
+        frappe.db.set_value(REQUEST_DOCTYPE, request, REQUEST_STATUS_FIELD, REQUEST_STATUS_OPEN)
+
 
 # ------------------------------------------------------------------
 # NEW ITEMS (one per part and disposition)

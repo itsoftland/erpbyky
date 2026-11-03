@@ -334,7 +334,8 @@ fixtures = [
                 "Service Entry button for the Service Request form",
                 "Service Entry - Submit Only When Completed",
                 "Service Entry - Sync Serviced Items to Damaged Items",
-                "Vehicle Tear Down Request - Create Tear Down Button"
+                "Vehicle Tear Down Request - Create Tear Down Button",
+                "Service Entry - Filter Spares by Box Items"
             ]]
         ]
     },
@@ -343,39 +344,6 @@ fixtures = [
 # Document Events
 doc_events = {
     "Stock Entry": {
-        "on_submit": "byky_app.storage_location.update_item_storage_locations",
-        "on_cancel": "byky_app.storage_location.reverse_item_storage_locations",
-    }
-}
-
-doc_events = {
-    "Stock Entry": {
-        "on_submit": "byky_app.storage_location.update_item_storage_locations",
-        "on_cancel": "byky_app.storage_location.reverse_item_storage_locations",
-    }
-}
-
-doc_events = {
-    "Stock Entry": {
-        "on_submit": [
-            "byky_app.storage_location.update_item_storage_locations",
-            "byky_app.stock_ledger_location.apply_locations_to_ledger",
-        ],
-        "on_cancel": "byky_app.storage_location.reverse_item_storage_locations",
-    },
-}
-
-doc_events = {
-    "Stock Entry": {
-        "before_validate": "byky_app.storage_location.copy_work_order_storage_locations",
-        # keep your existing events here
-    }
-}
-
-
-# Only one doc_events block is allowed: Python keeps the last one defined.
-doc_events = {
-    "Stock Entry": {
         "before_validate": "byky_app.storage_location.copy_work_order_storage_locations",
         "on_submit": [
             "byky_app.storage_location.update_item_storage_locations",
@@ -383,51 +351,26 @@ doc_events = {
         ],
         "on_cancel": "byky_app.storage_location.reverse_item_storage_locations",
     },
-}
-
-doc_events = {
-    "Stock Entry": {
-        "before_validate": (
-            "byky_app.storage_location."
-            "copy_work_order_storage_locations"
-        ),
-        "on_submit": (
-            "byky_app.storage_location."
-            "update_item_storage_locations"
-        ),
-        "on_cancel": (
-            "byky_app.storage_location."
-            "reverse_item_storage_locations"
-        ),
-    }
-}
-
-# Document Events
-# Only one doc_events block is allowed: Python keeps the last one defined.
-doc_events = {
-    "Stock Entry": {
-        "before_validate": "byky_app.storage_location.copy_work_order_storage_locations",
-        "on_submit": [
-            "byky_app.storage_location.update_item_storage_locations",
-            "byky_app.stock_ledger_location.apply_locations_to_ledger",
-        ],
-        "on_cancel": "byky_app.storage_location.reverse_item_storage_locations",
-    },
-     "Service Entry": {
+    "Service Entry": {
         "before_submit": "byky_app.service_entry_stock.check_submit_status",
         "on_submit": [
             "byky_app.service_entry_stock.process_service_stock",
             "byky_app.autocreate_tear_down_request.create_tear_down_request",
+            "byky_app.service_entry_stock.close_service_request",
         ],
-        "on_cancel": "byky_app.service_entry_stock.reverse_service_stock",
+       "on_cancel": [
+            "byky_app.service_entry_stock.reverse_service_stock",
+            "byky_app.service_entry_stock.reopen_service_request",
+        ],
+        
     },
-    "Vehicle Tear Down": {
+        "Vehicle Tear Down": {
         "validate": "byky_app.vehicle_tear_down.validate_vehicle_tear_down",
+        "on_update": "byky_app.vehicle_tear_down.close_tear_down_request",
         "on_submit": "byky_app.vehicle_tear_down.process_vehicle_tear_down",
-        "on_cancel": "byky_app.vehicle_tear_down.reverse_vehicle_tear_down",
-    }
+        "on_cancel": [
+            "byky_app.vehicle_tear_down.reverse_vehicle_tear_down",
+            "byky_app.vehicle_tear_down.reopen_tear_down_request",
+        ],
+    },  
 }
-
-
-
-    

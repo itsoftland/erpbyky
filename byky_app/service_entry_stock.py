@@ -37,6 +37,11 @@ WAREHOUSE_FLAG = "custom_is_warehouse_storage_"   # "Is Warehouse storage" check
 REQUIRE_SHELF = True                         # every used part must say which shelf it came from
 SUBMIT_ALLOWED_STATUS = ("completed", "non-repairable")  # Service Status values that allow the Service Entry to be submitted (lower case)
 
+SERVICE_REQUEST_FIELD = "service_id"         # field on Service Entry linking to the Service Request (e.g. SR-023)
+SR_STATUS_ON_SUBMIT = "Closed"               # Service Request status after the Service Entry is submitted
+SR_STATUS_ON_CANCEL = "Open"                 # status restored if the Service Entry is cancelled
+
+
 def check_submit_status(doc, method=None):
     """Service Entry before_submit: allow Submit only for Completed or Non-repairable."""
     status = (doc.get("service_status") or "").strip().lower()
@@ -45,6 +50,7 @@ def check_submit_status(doc, method=None):
         frappe.throw(
             _("A Service Entry can be submitted only when Service Status is Completed or Non-repairable.")
         )
+
 
 def process_service_stock(doc, method=None):
     """Service Entry on_submit: issue the used parts, receive the damaged parts into scrap."""
@@ -81,6 +87,37 @@ def reverse_service_stock(doc, method=None):
             se = frappe.get_doc("Stock Entry", name)
             se.flags.ignore_permissions = True
             se.cancel()
+
+
+def close_service_request(doc, method=None):
+    """Service Entry on_submit: set the linked Service Request status to Closed."""
+    _set_service_request_status(doc, SR_STATUS_ON_SUBMIT)
+
+
+def reopen_service_request(doc, method=None):
+    """Service Entry on_cancel: put the Service Request back to Open."""
+    _set_service_request_status(doc, SR_STATUS_ON_CANCEL)
+
+
+def _set_service_request_status(doc, status):
+    # try the Service ID link field first, then the Service Entry's own name (same id as the request)
+    candidates = [doc.get(SERVICE_REQUEST_FIELD), doc.name]
+    service_request = next(
+        (c for c in candidates if c and frappe.db.exists("Service Request", c)), None
+    )
+
+    if not service_request:
+        frappe.log_error(
+            f"No Service Request found for Service Entry {doc.name}",
+            "Service Request status update",
+        )
+        return
+
+    frappe.db.set_value("Service Request", service_request, "status", status)
+    frappe.msgprint(
+        _("Service Request {0} set to {1}").format(service_request, status),
+        alert=True,
+    )
 
 
 # ------------------------------------------------------------------

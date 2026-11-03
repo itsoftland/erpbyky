@@ -11,6 +11,7 @@
   "item",
   "item_group",
   "brand",
+  "status",
   "complaint_type",
   "compliant_details"
  ],
@@ -56,12 +57,20 @@
    "fieldname": "compliant_details",
    "fieldtype": "Small Text",
    "label": "Complaint Details"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Open\nHold\nClosed"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-11-02 10:25:29.866174",
+ "modified": "2026-11-03 08:40:17.339984",
  "modified_by": "Administrator",
  "module": "Byky App",
  "name": "Service Request",
