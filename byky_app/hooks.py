@@ -336,7 +336,8 @@ fixtures = [
                 "Service Entry - Sync Serviced Items to Damaged Items",
                 "Vehicle Tear Down Request - Create Tear Down Button",
                 "Service Entry - Filter Spares by Box Items",
-                "Service Entry - Vehicle Transfer"
+                "Service Entry - Vehicle Transfer",
+                "Branch - Create Branch Warehouse"
             ]]
         ]
     },
@@ -379,3 +380,31 @@ doc_events = {
         ],
     },  
 }
+
+# doc_events = {
+#     # ...your existing entries stay...
+#     "Country": {"after_insert": "byky_app.rms_sync.on_insert"},
+#     "State": {"after_insert": "byky_app.rms_sync.on_insert"},
+#     "Branch Type": {"after_insert": "byky_app.rms_sync.on_insert"},
+#     "Branch": {"after_insert": [
+#         "byky_app.rms_sync.on_insert",
+#     ]},
+#     "Event Location": {"after_insert": "byky_app.rms_sync.on_insert"},
+#     "Warehouse": {"after_insert": "byky_app.rms_sync.on_insert"},
+#     "Designation": {"after_insert": "byky_app.rms_sync.on_insert"},
+#     "Employee": {"after_insert": "byky_app.rms_sync.on_insert"},
+#     "Department": {"after_insert": "byky_app.rms_sync.on_insert"},
+#      "Brand": {"after_insert": "byky_app.rms_sync.on_insert"},
+#     "Item Group": {"after_insert": "byky_app.rms_sync.on_insert"},
+#     "Item": {"after_insert": "byky_app.rms_sync.on_insert"},
+#     "Serial No": {"after_insert": "byky_app.rms_sync.on_insert"},
+#     "Asset": {"after_insert": "byky_app.rms_sync.on_insert"},
+# }
+
+
+# scheduler_events = {
+#     "cron": {
+#         "*/5 * * * *": ["byky_app.rms_sync.sync_pending_serial_nos"],
+#     },
+#     "hourly": ["byky_app.rms_sync.retry_failed"],
+# }

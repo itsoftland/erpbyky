@@ -295,5 +295,16 @@
   "name": "Service Entry - Vehicle Transfer",
   "script": "frappe.ui.form.on('Service Entry', {\n    setup(frm) {\n        frm.set_query('transfer_warehouse', () => ({\n            filters: { is_group: 0, company: frm.doc.company }\n        }));\n    },\n    before_save(frm) {\n        frm._had_transfer = !!frm.doc.stock_transfer;\n    },\n    after_save(frm) {\n        if (frm.doc.service_type === 'Major Repair' && frm.doc.stock_transfer && !frm._had_transfer) {\n            frappe.set_route('Form', 'Stock Entry', frm.doc.stock_transfer);\n        }\n    },\n    service_type(frm) {\n        if (frm.doc.service_type !== 'Major Repair' && !frm.doc.stock_transfer) {\n            frm.set_value('transfer_warehouse', '');\n        }\n    }\n});",
   "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Branch",
+  "enabled": 1,
+  "modified": "2026-11-04 14:12:18.698998",
+  "module": "Byky App",
+  "name": "Branch - Create Branch Warehouse",
+  "script": "frappe.ui.form.on('Branch', {\n    after_save(frm) {\n        // already has a warehouse, or a creation is already in progress\n        if (frm.doc.warehouse || frm.__creating_wh) return;\n\n        const company = frappe.defaults.get_default('company');\n        if (!company) {\n            frappe.msgprint(__('Set a Default Company first, so the branch warehouse can be created.'));\n            return;\n        }\n\n        frm.__creating_wh = true;\n\n        // reuse the warehouse if one with this name already exists\n        frappe.db.get_value('Warehouse', { warehouse_name: frm.doc.branch, company: company }, 'name')\n            .then(r => {\n                if (r.message && r.message.name) return r.message.name;\n\n                return frappe.db.insert({\n                    doctype: 'Warehouse',\n                    warehouse_name: frm.doc.branch,\n                    company: company,\n                    branch: frm.doc.name\n                }).then(wh => wh.name);\n            })\n            .then(wh_name =>\n                frappe.db.set_value('Branch', frm.doc.name, 'warehouse', wh_name)\n                    .then(() => wh_name)\n            )\n            .then(wh_name => {\n                frm.__creating_wh = false;\n                frm.reload_doc();\n                frappe.show_alert({\n                    message: __('Warehouse {0} created for this branch', [wh_name]),\n                    indicator: 'green'\n                });\n            })\n            .catch(() => {\n                frm.__creating_wh = false;\n            });\n    }\n});",
+  "view": "Form"
  }
 ]
