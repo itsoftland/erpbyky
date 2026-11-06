@@ -340,6 +340,7 @@ fixtures = [
                 "Branch - Create Branch Warehouse",
                 "Stock Entry List - Posting Date Range",
                 "Purchase Order - Supplier Wise Items",
+                "Purchase Order - Add Needed Boxes",
             ]]
         ]
     },
@@ -381,6 +382,9 @@ doc_events = {
             "byky_app.vehicle_tear_down.reopen_tear_down_request",
         ],
     },  
+     "Purchase Order":   {"before_validate": "byky_app.finished_good.zero_value"},
+    "Purchase Receipt": {"before_validate": "byky_app.finished_good.drop_rows"},
+    "Purchase Invoice": {"before_validate": "byky_app.finished_good.drop_rows"},
 }
 
 # doc_events = {
