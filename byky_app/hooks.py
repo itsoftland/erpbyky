@@ -324,7 +324,7 @@ fixtures = [
                 "Work Order Form Storage Button",
                 "Stock Entry Storage Location Cascading Filter",
                 "Stock Entry - Storage Location Items Autofetch",
-                "Storage Rack — filter by Warehouse, Floor, Area, and Shelf",
+                "Storage Rack — filter by Warehouse, Floor, Area, and Shelf",   
                 "Shelf — filter by Warehouse, Floor, and Area",
                 "Storage Area — filter by Warehouse and Floor",
                 "Service Entry Serviced Items Cascading Filter",
@@ -337,7 +337,9 @@ fixtures = [
                 "Vehicle Tear Down Request - Create Tear Down Button",
                 "Service Entry - Filter Spares by Box Items",
                 "Service Entry - Vehicle Transfer",
-                "Branch - Create Branch Warehouse"
+                "Branch - Create Branch Warehouse",
+                "Stock Entry List - Posting Date Range",
+                "Purchase Order - Supplier Wise Items",
             ]]
         ]
     },
