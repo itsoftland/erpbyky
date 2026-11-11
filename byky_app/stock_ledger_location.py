@@ -13,6 +13,9 @@ FLAG = "custom_is_warehouse_storage_"
 SE_TABLE = "custom_storage_location"
 SLE_TABLE = "custom_storage_location"
 
+# NEW: finished goods (Item custom_finished_good = 1) are stored in their own table
+FG_TABLE = "custom_finished_item_storage"
+
 # Storage Location child-table fieldnames
 ROW_ITEM = "item"
 ROW_WAREHOUSE = "warehouse"
@@ -42,6 +45,15 @@ SKIP_FIELDS = {
     "parenttype",
     "doctype",
 }
+
+
+# ---------------------------------------------------------
+# NEW: FINISHED GOOD CHECK
+# ---------------------------------------------------------
+
+def _is_finished_good(item):
+    """True when the Item has custom_finished_good = 1."""
+    return bool(item and frappe.get_cached_value("Item", item, "custom_finished_good"))
 
 
 # ---------------------------------------------------------
@@ -100,6 +112,8 @@ def apply_locations_to_ledger(doc, method=None):
        do not require a custom Storage Location row or Shelf.
     4. Copy valid Storage Location rows to matching Stock Ledger Entries.
     5. Avoid inserting duplicate location rows.
+    6. NEW: finished goods are validated in the Finished Item Storage
+       table; that table is not copied to the Stock Ledger Entry.
     """
 
     # Warehouse storage: skip custom storage-location processing
@@ -251,6 +265,9 @@ def _validate(doc, rows):
     4. The finished product in a Manufacture Stock Entry does not require
        a custom Storage Location row or Shelf.
     5. Other incoming items still require their own Storage Location rows.
+    6. NEW: finished goods (Item custom_finished_good = 1) are checked in
+       the Finished Item Storage table instead: Item and Warehouse are
+       required, no Shelf is needed.
     """
 
     # All item/warehouse combinations in the Stock Entry
@@ -321,25 +338,65 @@ def _validate(doc, rows):
 
         covered.add(combination)
 
-    # Check incoming stock that still lacks a Storage Location row.
+    # NEW: finished goods, validate the Finished Item Storage rows
+    fg_covered = set()
+
+    for row in doc.get(FG_TABLE) or []:
+
+        item = row.get(ROW_ITEM)
+        warehouse = row.get(ROW_WAREHOUSE)
+
+        if not item or not warehouse:
+            frappe.throw(
+                _(
+                    "Row {0} (Finished Item Storage): Item and Warehouse "
+                    "are required."
+                ).format(row.idx)
+            )
+
+        combination = (item, warehouse)
+
+        if combination not in moves:
+            frappe.throw(
+                _(
+                    "Row {0} (Finished Item Storage): item {1} with warehouse "
+                    "{2} is not present in the Items table of this "
+                    "Stock Entry."
+                ).format(row.idx, item, warehouse)
+            )
+
+        if not _is_finished_good(item):
+            frappe.throw(
+                _(
+                    "Row {0} (Finished Item Storage): item {1} is not a "
+                    "finished good. Use the Storage Location table for it."
+                ).format(row.idx, item)
+            )
+
+        fg_covered.add(combination)
+
+    # CHANGED: check incoming stock that still lacks a storage row.
     # Exempt only the actual finished product in Manufacture.
-    missing = {
-        (item, warehouse)
-        for item, warehouse in incoming
-        if (
-            not is_finished_goods_row(doc, item, warehouse)
-            and (item, warehouse) not in covered
-        )
-    }
+    # Finished goods are looked up in the Finished Item Storage table,
+    # all other items in the Storage Location table.
+    for item, warehouse in sorted(incoming):
 
-    if missing:
+        if is_finished_goods_row(doc, item, warehouse):
+            continue
 
-        item, warehouse = sorted(missing)[0]
-
-        frappe.throw(
-            _(
-                "No Storage Location row for item {0} in warehouse {1}. "
-                "Add a Storage Location row with a Shelf, or tick "
-                "'Is Warehouse storage'."
-            ).format(item, warehouse)
-        )
+        if _is_finished_good(item):
+            if (item, warehouse) not in fg_covered:
+                frappe.throw(
+                    _(
+                        "No Finished Item Storage row for item {0} in "
+                        "warehouse {1}."
+                    ).format(item, warehouse)
+                )
+        elif (item, warehouse) not in covered:
+            frappe.throw(
+                _(
+                    "No Storage Location row for item {0} in warehouse {1}. "
+                    "Add a Storage Location row with a Shelf, or tick "
+                    "'Is Warehouse storage'."
+                ).format(item, warehouse)
+            )

@@ -343,6 +343,7 @@ fixtures = [
                 "Hide Purchase Receipt Until Invoiced",
                 "Receipt Items Only From Invoice",
                 "Purchase Invoice - Convert Finished Good to Boxes",
+                "Stock Entry Box Unpacking",
             ]]
         ]
     },
@@ -351,13 +352,23 @@ fixtures = [
 # Document Events
 doc_events = {
     "Stock Entry": {
-        "before_validate": "byky_app.storage_location.copy_work_order_storage_locations",
-        "on_submit": [
-            "byky_app.storage_location.update_item_storage_locations",
-            "byky_app.stock_ledger_location.apply_locations_to_ledger",
-        ],
-        "on_cancel": "byky_app.storage_location.reverse_item_storage_locations",
-    },
+    "before_validate": [
+        "byky_app.storage_location.copy_work_order_storage_locations",
+        "byky_app.box_unpacking.allocate_rates",
+    ],
+    "validate": [
+        "byky_app.box_unpacking.validate_box_unpacking",
+    ],
+    "on_submit": [
+        "byky_app.storage_location.update_item_storage_locations",
+        "byky_app.stock_ledger_location.apply_locations_to_ledger",
+        "byky_app.finished_item_storage.on_submit",
+    ],
+    "on_cancel": [
+        "byky_app.storage_location.reverse_item_storage_locations",
+        "byky_app.finished_item_storage.on_cancel",
+    ],
+},
     
   "Service Entry": {
     "before_submit": "byky_app.service_entry_stock.check_submit_status",
