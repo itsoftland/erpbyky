@@ -1,0 +1,155 @@
+<div class="item-storage-page">
+
+    <!-- SEARCH (server-side) -->
+    <div class="card storage-card mb-3">
+        <div class="card-body py-3">
+            <div class="row align-items-center no-gutters">
+
+                <div class="col-12 col-md mb-2 mb-md-0 pr-md-2">
+                    <div class="input-group storage-search-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">
+                                <i class="fa fa-search"></i>
+                            </span>
+                        </div>
+                        <input
+                            type="text"
+                            id="item-search"
+                            class="form-control"
+                            placeholder="Search by Item Code or Item Name"
+                            aria-label="Search by item code or item name"
+                            autocomplete="off"
+                        >
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-auto">
+                    <button
+                        type="button"
+                        id="item-search-button"
+                        class="btn btn-primary btn-block">
+                        <i class="fa fa-search mr-1"></i> Search
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- INSTANT FILTERS (client-side) -->
+    <div class="card storage-card mb-3">
+        <div class="card-body py-3">
+
+            <div class="storage-section-label">
+                <i class="fa fa-filter mr-1"></i> Quick Filters
+            </div>
+
+            <div class="row storage-filter-row">
+
+                <div class="col-6 col-md-4 col-lg-3 mb-2">
+                    <input type="text" id="filter-item-code"
+                           class="form-control form-control-sm storage-filter-input"
+                           placeholder="Item Code" aria-label="Filter by Item Code">
+                </div>
+
+                <div class="col-6 col-md-4 col-lg-3 mb-2">
+                    <input type="text" id="filter-item-name"
+                           class="form-control form-control-sm storage-filter-input"
+                           placeholder="Item Name" aria-label="Filter by Item Name">
+                </div>
+
+                <div class="col-6 col-md-4 col-lg-3 mb-2">
+                    <input type="text" id="filter-warehouse"
+                           class="form-control form-control-sm storage-filter-input"
+                           placeholder="Warehouse" aria-label="Filter by Warehouse">
+                </div>
+
+                <div class="col-6 col-md-4 col-lg-3 mb-2">
+                    <input type="text" id="filter-floor"
+                           class="form-control form-control-sm storage-filter-input"
+                           placeholder="Floor" aria-label="Filter by Floor">
+                </div>
+
+                <div class="col-6 col-md-4 col-lg-3 mb-2">
+                    <input type="text" id="filter-area"
+                           class="form-control form-control-sm storage-filter-input"
+                           placeholder="Area" aria-label="Filter by Area">
+                </div>
+
+                <div class="col-6 col-md-4 col-lg-3 mb-2">
+                    <input type="text" id="filter-shelf"
+                           class="form-control form-control-sm storage-filter-input"
+                           placeholder="Shelf" aria-label="Filter by Shelf">
+                </div>
+
+                <div class="col-6 col-md-4 col-lg-3 mb-2">
+                    <input type="text" id="filter-rack"
+                           class="form-control form-control-sm storage-filter-input"
+                           placeholder="Rack" aria-label="Filter by Rack">
+                </div>
+
+                <div class="col-6 col-md-4 col-lg-3 mb-2">
+                    <button
+                        type="button"
+                        id="storage-filter-clear"
+                        class="btn btn-default btn-sm btn-block"
+                        title="Clear all filters"
+                        aria-label="Clear all filters">
+                        <i class="fa fa-times mr-1"></i> Clear
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- RESULTS -->
+    <div class="card storage-card">
+
+        <div class="card-header storage-list-heading">
+            <h5 class="mb-0">Item Storage Details</h5>
+            <span id="item-storage-status" class="storage-status">
+                Loading inventory...
+            </span>
+        </div>
+
+        <div class="table-responsive storage-table-wrapper">
+            <table class="table table-hover mb-0 storage-table">
+
+                <thead>
+                    <tr>
+                        <th>Item Code</th>
+                        <th>Item Name</th>
+                        <th class="text-right">Total Recorded Qty</th>
+                        <th class="text-right">Location Qty</th>
+                        <th>UOM</th>
+                        <th>Warehouse</th>
+                        <th>Floor</th>
+                        <th>Area</th>
+                        <th>Shelf</th>
+                        <th>Rack</th>
+                    </tr>
+                </thead>
+
+                <tbody id="item-storage-results">
+                    <tr>
+                        <td colspan="10" class="storage-empty">
+                            Loading storage records...
+                        </td>
+                    </tr>
+                </tbody>
+
+            </table>
+        </div>
+
+        <div class="card-footer storage-footer">
+            <i class="fa fa-info-circle mr-1"></i>
+            Quantities are based on saved custom Storage Location records
+            and may differ from the actual ERPNext stock balance.
+        </div>
+
+    </div>
+
+</div>

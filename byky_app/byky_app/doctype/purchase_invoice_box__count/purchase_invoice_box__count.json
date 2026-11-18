@@ -1,0 +1,51 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-11-16 11:33:58.088925",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "item",
+  "box_count",
+  "box_required"
+ ],
+ "fields": [
+  {
+   "fieldname": "item",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Item",
+   "options": "Item"
+  },
+  {
+   "fieldname": "box_count",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Box Count",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "box_required",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Box Required",
+   "options": "Needed\nNot Needed"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-11-16 15:55:45.228589",
+ "modified_by": "Administrator",
+ "module": "Byky App",
+ "name": "Purchase Invoice Box  Count",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

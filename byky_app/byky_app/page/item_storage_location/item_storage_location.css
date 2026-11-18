@@ -1,0 +1,247 @@
+/* =====================================
+   MAIN PAGE
+   Uses Bootstrap (already loaded by Frappe Desk)
+   and Frappe theme variables, so it follows
+   light / dark mode automatically.
+===================================== */
+
+.item-storage-page {
+    width: 100%;
+    padding: 10px 0 25px;
+    color: var(--text-color, #36414c);
+    font-family: inherit;
+}
+
+
+/* =====================================
+   CARDS
+===================================== */
+
+.item-storage-page .storage-card {
+    border: 1px solid var(--border-color, #d8e0e8);
+    border-radius: 10px;
+    background: var(--card-bg, #ffffff);
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+    overflow: hidden;
+}
+
+.item-storage-page .storage-section-label {
+    margin-bottom: 10px;
+    color: var(--text-muted, #6b7685);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+
+/* =====================================
+   SEARCH + FILTER INPUTS
+===================================== */
+
+.item-storage-page .storage-search-group .input-group-text {
+    border: 1px solid var(--border-color, #d8e0e8);
+    border-right: 0;
+    background: var(--control-bg, #f3f4f6);
+    color: var(--text-muted, #8d99a6);
+}
+
+.item-storage-page .storage-search-group .form-control {
+    height: 38px;
+    border-left: 0;
+}
+
+.item-storage-page .form-control {
+    border: 1px solid var(--border-color, #d8e0e8);
+    border-radius: 8px;
+    background: var(--control-bg, #f3f4f6);
+    color: var(--text-color, #36414c);
+    font-size: 13px;
+    box-shadow: none;
+}
+
+.item-storage-page .storage-search-group .form-control {
+    border-radius: 0 8px 8px 0;
+}
+
+.item-storage-page .storage-search-group .input-group-text {
+    border-radius: 8px 0 0 8px;
+}
+
+.item-storage-page .form-control::placeholder {
+    color: var(--text-muted, #8d99a6);
+    opacity: 1;
+}
+
+.item-storage-page .form-control:focus {
+    border-color: var(--primary, #2490ef);
+    background: var(--card-bg, #ffffff);
+    box-shadow: 0 0 0 3px rgba(36, 144, 239, 0.15);
+}
+
+.item-storage-page .storage-filter-input {
+    height: 34px;
+}
+
+.item-storage-page .btn {
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.item-storage-page #item-search-button {
+    min-width: 110px;
+    height: 38px;
+}
+
+.item-storage-page #storage-filter-clear {
+    height: 34px;
+}
+
+
+/* =====================================
+   RESULT HEADER
+===================================== */
+
+.item-storage-page .storage-list-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-color, #d8e0e8);
+    background: var(--card-bg, #ffffff);
+}
+
+.item-storage-page .storage-list-heading h5 {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.item-storage-page .storage-status {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: var(--control-bg, #f3f4f6);
+    color: var(--text-muted, #6b7685);
+    font-size: 12px;
+}
+
+
+/* =====================================
+   TABLE
+===================================== */
+
+.item-storage-page .storage-table-wrapper {
+    max-height: 65vh;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.item-storage-page .storage-table {
+    min-width: 1000px;
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-color, #36414c);
+    background: var(--card-bg, #ffffff);
+}
+
+.item-storage-page .storage-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: 12px 14px;
+    border-top: 0;
+    border-bottom: 2px solid var(--border-color, #d8e0e8);
+    background: var(--subtle-fg, #f3f5f8);
+    color: var(--text-muted, #4b5a6b);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.item-storage-page .storage-table tbody td {
+    padding: 11px 14px;
+    border-top: 1px solid var(--border-color, #e5eaf0);
+    line-height: 1.45;
+    vertical-align: middle;
+    overflow-wrap: anywhere;
+}
+
+/* Item code */
+.item-storage-page .storage-table tbody td:first-child {
+    color: var(--primary, #2490ef);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Quantity columns */
+.item-storage-page .storage-table tbody td:nth-child(3),
+.item-storage-page .storage-table tbody td:nth-child(4) {
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* UOM */
+.item-storage-page .storage-table tbody td:nth-child(5) {
+    color: var(--text-muted, #6b7685);
+    white-space: nowrap;
+}
+
+/* Zebra + hover */
+.item-storage-page .storage-table tbody tr:nth-child(even) {
+    background: rgba(127, 140, 160, 0.06);
+}
+
+.item-storage-page .storage-table tbody tr:hover {
+    background: rgba(36, 144, 239, 0.08);
+}
+
+/* Empty / loading message row */
+.item-storage-page .storage-table tbody td.storage-empty {
+    padding: 36px 14px;
+    color: var(--text-muted, #64748b);
+    font-weight: 400;
+    text-align: center;
+    white-space: normal;
+}
+
+
+/* =====================================
+   FOOTER NOTE
+===================================== */
+
+.item-storage-page .storage-footer {
+    padding: 11px 18px;
+    border-top: 1px solid var(--border-color, #d8e0e8);
+    background: var(--card-bg, #ffffff);
+    color: var(--text-muted, #6b7685);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+
+/* =====================================
+   RESPONSIVE
+===================================== */
+
+@media (max-width: 767px) {
+    .item-storage-page {
+        padding: 6px 0 20px;
+    }
+
+    .item-storage-page #item-search-button {
+        width: 100%;
+    }
+
+    .item-storage-page .storage-list-heading {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

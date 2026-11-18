@@ -342,8 +342,12 @@ fixtures = [
                 "Purchase Order - Supplier Wise Items",
                 "Hide Purchase Receipt Until Invoiced",
                 "Receipt Items Only From Invoice",
-                "Purchase Invoice - Convert Finished Good to Boxes",
+                "Purchase Invoice - Convert Finished Good to Boxes", ##
                 "Stock Entry Box Unpacking",
+                "Box Entry - Autofill From Purchase Invoice",
+                "Purchase Invoice - Box Entry Defaults",
+                "Purchase Invoice - Packaging Table",
+                "Stock Entry - Box Name Popup",
             ]]
         ]
     },
@@ -355,6 +359,7 @@ doc_events = {
     "before_validate": [
         "byky_app.storage_location.copy_work_order_storage_locations",
         "byky_app.box_unpacking.allocate_rates",
+        "byky_app.stock_entry.fill_box_name",
     ],
     "validate": [
         "byky_app.box_unpacking.validate_box_unpacking",
@@ -395,9 +400,41 @@ doc_events = {
             "byky_app.vehicle_tear_down.reopen_tear_down_request",
         ],
     },  
-    "Purchase Receipt": {"before_validate": "byky_app.finished_good.drop_rows"},
-    "Purchase Invoice": {"before_validate": "byky_app.finished_good.drop_rows"},
-    "Branch": {"after_insert": "byky_app.branch_warehouse.create_branch_warehouse"}
+     "Purchase Order": {
+        "before_validate": "byky_app.finished_good.zero_value",
+        "validate": "byky_app.item_tax.set_row_tax",
+    },
+    "Purchase Receipt": {
+        "before_validate": "byky_app.finished_good.add_box_items",
+        "before_validate": "byky_app.stock_entry.fill_box_name",
+    },
+     "Purchase Invoice": {
+        "before_validate": "byky_app.item_tax.process_box_rows",
+        "validate": [
+            "byky_app.item_tax.set_row_tax",
+            "byky_app.item_tax.fill_box_entries",
+        ],
+    },
+     
+    "Branch": {"after_insert": "byky_app.branch_warehouse.create_branch_warehouse"},
+    "Category": {
+        "on_update": "byky_app.category.sync_item_group"
+    },
+    "Box Entry": {
+        "on_update": "byky_app.box_entry.sync_box_item"
+    },
+    "Vehicle Type": {
+        "on_update": "byky_app.vehicle_type.sync_vehicle_item"
+    },
+    "Spares": {
+        "on_update": "byky_app.spares.sync_spare_item"
+    },
+    
+}
+
+override_whitelisted_methods = {
+    "erpnext.accounts.doctype.purchase_invoice.purchase_invoice.make_purchase_receipt":
+        "byky_app.purchase_invoice.make_purchase_receipt",
 }
 
 ddoc_events = {

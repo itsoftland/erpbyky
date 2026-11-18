@@ -1,0 +1,27 @@
+{
+ "content": null,
+ "creation": "2026-11-16 08:03:58.912777",
+ "docstatus": 0,
+ "doctype": "Page",
+ "icon": "fa fa-shopping-cart",
+ "idx": 0,
+ "modified": "2026-11-16 08:03:58.912777",
+ "modified_by": "Administrator",
+ "module": "Byky App",
+ "name": "purchase-order-entry",
+ "owner": "Administrator",
+ "page_name": "purchase-order-entry",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Byky Role"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Purchase Order Entry"
+}

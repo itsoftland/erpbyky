@@ -1,0 +1,26 @@
+{
+ "content": null,
+ "creation": "2026-11-16 12:44:27.916922",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2026-11-16 12:44:27.916922",
+ "modified_by": "Administrator",
+ "module": "Byky App",
+ "name": "item-storage-locatio",
+ "owner": "Administrator",
+ "page_name": "item-storage-locatio",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Byky Role"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 1,
+ "title": "Item Count & Storage Location"
+}
