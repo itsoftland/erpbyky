@@ -348,6 +348,7 @@ fixtures = [
                 "Purchase Invoice - Box Entry Defaults",
                 "Purchase Invoice - Packaging Table",
                 "Stock Entry - Box Name Popup",
+                "Work Order - Item Storage Location Filters",
             ]]
         ]
     },
