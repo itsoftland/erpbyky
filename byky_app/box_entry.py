@@ -52,9 +52,10 @@ def save_box_items(box_entry, items):
     for row in items:
         if not row.get("item"):
             continue
+        uom = row.get("uom") or frappe.db.get_value("Item", row.get("item"), "stock_uom")
         doc.append("box_items", {
             "item": row.get("item"),
-            "uom": row.get("uom"),
+            "uom": uom,
             qty_field: row.get("quantity") or 0,
         })
     doc.save()
