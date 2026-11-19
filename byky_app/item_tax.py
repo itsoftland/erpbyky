@@ -36,6 +36,9 @@ def set_row_tax(doc, method=None):
     """Split each tax line's amount to the item rows and store it in the
     Tax Amount / Net Amount (With Tax) fields of the row."""
 
+       # item_wise_tax_detail holds company-currency amounts; the rows are in document currency
+    conversion_rate = flt(doc.get("conversion_rate")) or 1
+
     tax_by_key = {}
     for tax in doc.get("taxes") or []:
         try:
@@ -43,9 +46,8 @@ def set_row_tax(doc, method=None):
         except ValueError:
             detail = {}
         for key, val in detail.items():
-            amount = flt(val[1]) if isinstance(val, (list, tuple)) and len(val) > 1 else 0
+            amount = flt(val[1]) / conversion_rate if isinstance(val, (list, tuple)) and len(val) > 1 else 0
             tax_by_key[key] = tax_by_key.get(key, 0) + amount
-
     # same item on several rows (identify row + box rows): share the tax by net amount
     rows_by_key = {}
     for row in doc.items:

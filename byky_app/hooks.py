@@ -247,6 +247,8 @@ app_license = "mit"
 # List of apps whose translatable strings should be excluded from this app's translations.
 # ignore_translatable_strings
 
+
+
 fixtures = [
     # Custom DocTypes
    {"dt": "DocType", "filters": [["module", "=", "Byky App"], ["custom", "=", 1]]},
@@ -286,7 +288,8 @@ fixtures = [
                 "Purchase",
                 "Production",
                 "Maintenance",
-                "Scrap Sales"
+                "Scrap Sales",
+                "Reports",
             ]]
         ]
     },
@@ -342,13 +345,14 @@ fixtures = [
                 "Purchase Order - Supplier Wise Items",
                 "Hide Purchase Receipt Until Invoiced",
                 "Receipt Items Only From Invoice",
-                "Purchase Invoice - Convert Finished Good to Boxes", ##
+                # "Purchase Invoice - Convert Finished Good to Boxes", ##
                 "Stock Entry Box Unpacking",
                 "Box Entry - Autofill From Purchase Invoice",
                 "Purchase Invoice - Box Entry Defaults",
                 "Purchase Invoice - Packaging Table",
                 "Stock Entry - Box Name Popup",
                 "Work Order - Item Storage Location Filters",
+                "Purchase Order – Tax Percentage Display"
             ]]
         ]
     },
@@ -438,76 +442,65 @@ override_whitelisted_methods = {
         "byky_app.purchase_invoice.make_purchase_receipt",
 }
 
-ddoc_events = {
-    # Keep your other existing entries here.
+# #""""""""""""""""""
+# # ERP TO RMS SYN 
+# #""""""""""""""""""
+# # Master data synchronised to RMS (Serial No is NOT here: vehicles go through
+# # the Manufacture submit hook and the 5-minute sweep).
+# _RMS_MASTERS = [
+#     "Country",
+#     "State",
+#     "Branch Type",
+#     "Branch",
+#     "Event Location",
+#     "Warehouse",
+#     "Designation",
+#     "Employee",
+#     "Department",
+#     "Brand",
+#     "Item Group",
+#     "Item",
+#     "Asset",
+# ]
 
-    "Country": {
-        "after_insert": "byky_app.rms_sync.on_insert"
-    },
+# _RMS_EVENTS = {
+#     "after_insert": "byky_app.rms_sync.on_insert",
+#     "on_update": "byky_app.rms_sync.on_update",
+#     "on_trash": "byky_app.rms_sync.on_trash",
+# }
 
-    "State": {
-        "after_insert": "byky_app.rms_sync.on_insert"
-    },
+# doc_events = {
+#     # Keep your other existing entries here (Service Entry, finished goods,
+#     # Purchase Order etc.). If one of them is also a DocType above, merge the
+#     # events into the same dict instead of repeating the key.
 
-    "Branch Type": {
-        "after_insert": "byky_app.rms_sync.on_insert"
-    },
+#     **{doctype: dict(_RMS_EVENTS) for doctype in _RMS_MASTERS},
 
-    "Branch": {
-        "after_insert": "byky_app.rms_sync.on_insert"
-    },
+#     # Branch: the warehouse must be created and linked BEFORE the RMS hook
+#     # runs, so the message sent to RMS already contains the warehouse.
+#     "Branch": {
+#         "after_insert": [
+#             "byky_app.branch.create_branch_warehouse",
+#             "byky_app.rms_sync.on_insert",
+#         ],
+#         "on_update": "byky_app.rms_sync.on_update",
+#         "on_trash": "byky_app.rms_sync.on_trash",
+#     },
 
-    "Event Location": {
-        "after_insert": "byky_app.rms_sync.on_insert"
-    },
-
-    "Warehouse": {
-        "after_insert": "byky_app.rms_sync.on_insert"
-    },
-
-    "Designation": {
-        "after_insert": "byky_app.rms_sync.on_insert"
-    },
-
-    "Employee": {
-        "after_insert": "byky_app.rms_sync.on_insert"
-    },
-
-    "Department": {
-        "after_insert": "byky_app.rms_sync.on_insert"
-    },
-
-    "Brand": {
-        "after_insert": "byky_app.rms_sync.on_insert"
-    },
-
-    "Item Group": {
-        "after_insert": "byky_app.rms_sync.on_insert"
-    },
-
-    "Item": {
-        "after_insert": "byky_app.rms_sync.on_insert"
-    },
-
-    "Asset": {
-        "after_insert": "byky_app.rms_sync.on_insert"
-    },
-
-    # Vehicle synchronization happens on Manufacture submission.
-    "Stock Entry": {
-        "on_submit": "byky_app.rms_sync.on_manufacture_submit"
-    },
-}
+#     # Vehicle synchronization happens on Manufacture submission.
+#     "Stock Entry": {
+#         "on_submit": "byky_app.rms_sync.on_manufacture_submit"
+#     },
+# }
 
 
-scheduler_events = {
-    "cron": {
-        "*/5 * * * *": [
-            "byky_app.rms_sync.sync_pending_serial_nos"
-        ],
-    },
-
-    "hourly": [
-        "byky_app.rms_sync.retry_failed"
-    ],
-}
+# scheduler_events = {
+#     "cron": {
+#         "*/5 * * * *": [
+#             "byky_app.rms_sync.sync_pending_serial_nos",
+#             # Back-off starts at 5 minutes, so this runs every 5 minutes
+#             # (it only sends rows that are due).
+#             "byky_app.rms_sync.retry_failed",
+#         ],
+#     },
+# }
