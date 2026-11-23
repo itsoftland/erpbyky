@@ -36,8 +36,8 @@ def create_branch_warehouse(doc, method=None):
     if not company:
         frappe.throw("Please select a Company.")
 
-    # --------------------------------------------------
-    # 4. Find BYKY Root Warehouse
+       # --------------------------------------------------
+    # 4. Find (or create) BYKY Root Warehouse
     # --------------------------------------------------
 
     root_warehouse = frappe.db.get_value(
@@ -51,9 +51,14 @@ def create_branch_warehouse(doc, method=None):
     )
 
     if not root_warehouse:
-        frappe.throw(
-            f"Byky Warehouse root not found for Company: {company}"
-        )
+        root_doc = frappe.get_doc({
+            "doctype": "Warehouse",
+            "warehouse_name": "Byky Warehouse",
+            "company": company,
+            "is_group": 1
+        })
+        root_doc.insert(ignore_permissions=True)
+        root_warehouse = root_doc.name
 
     # --------------------------------------------------
     # 5. Check Existing Warehouse
