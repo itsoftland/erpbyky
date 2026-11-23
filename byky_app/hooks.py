@@ -421,7 +421,9 @@ doc_events = {
         ],
     },
      
-    "Branch": {"after_insert": "byky_app.branch_warehouse.create_branch_warehouse"},
+    "Branch": {
+        "after_insert": "byky_app.branch_warehouse.create_warehouse_for_branch",
+    },
     "Category": {
         "on_update": "byky_app.category.sync_item_group"
     },

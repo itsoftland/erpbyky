@@ -1,131 +1,69 @@
+"""
+byky_app/branch_warehouse.py
+
+Creates a Warehouse (named after the Branch) when a Branch is created, and links
+the two through the custom fields:
+    Branch.custom_warehouse   -> Warehouse
+    Warehouse.custom_branch   -> Branch
+
+Hook it up in byky_app/hooks.py:
+
+    doc_events = {
+        "Branch": {
+            "after_insert": "byky_app.branch_warehouse.create_warehouse_for_branch",
+        },
+        # ... keep your existing "Stock Entry" events here
+    }
+
+Then run:
+    bench --site byky migrate
+    bench restart
+"""
 
 import frappe
+from frappe import _
+
+# Optional: set to your real parent group, e.g. "All Warehouses - B".
+# Leave as None to let ERPNext use the company's default root.
+PARENT_WAREHOUSE = None
 
 
-def create_branch_warehouse(doc, method=None):
-    """
-    Automatically create a Warehouse for every new Branch
-    and link it to the Branch document.
-    """
-
-    # --------------------------------------------------
-    # 1. Check existing Warehouse link
-    # --------------------------------------------------
-
-    if doc.get("warehouse"):
+def create_warehouse_for_branch(doc, method=None):
+    warehouse_name = (doc.branch or "").strip()
+    if not warehouse_name:
         return
 
-    # --------------------------------------------------
-    # 2. Get Branch Name
-    # --------------------------------------------------
-
-    branch_name = doc.get("branch")
-
-    if not branch_name:
-        frappe.throw("Branch name is required.")
-
-    # --------------------------------------------------
-    # 3. Get Company
-    # --------------------------------------------------
-
-    company = (
-        doc.get("company")
-        or frappe.defaults.get_global_default("company")
+    company = doc.get("company") or frappe.db.get_single_value(
+        "Global Defaults", "default_company"
     )
-
     if not company:
-        frappe.throw("Please select a Company.")
+        frappe.throw(_("Set a Company on the Branch or a default company in Global Defaults."))
 
-        # --------------------------------------------------
-    # 4. Find (or create) BYKY Root Warehouse
-    # --------------------------------------------------
-
-    root = frappe.db.get_value(
-        "Warehouse",
-        {
-            "warehouse_name": "Byky Warehouse",
-            "company": company
-        },
-        ["name", "is_group"],
-        as_dict=True
+    existing = frappe.db.get_value(
+        "Warehouse", {"warehouse_name": warehouse_name, "company": company}, "name"
     )
 
-    if root:
-        # exists but not a group -> make it a group so it can be a parent
-        if not root.is_group:
-            frappe.db.set_value("Warehouse", root.name, "is_group", 1)
-        root_warehouse = root.name
+    if existing:
+        warehouse_id = existing
+        frappe.db.set_value("Warehouse", warehouse_id, "custom_branch", doc.name)
     else:
-        root_doc = frappe.get_doc({
-            "doctype": "Warehouse",
-            "warehouse_name": "Byky Warehouse",
-            "company": company,
-            "is_group": 1
-        })
-        root_doc.insert(ignore_permissions=True)
-        root_warehouse = root_doc.name
-        
-    # --------------------------------------------------
-    # 5. Check Existing Warehouse
-    # --------------------------------------------------
+        warehouse = frappe.get_doc(
+            {
+                "doctype": "Warehouse",
+                "warehouse_name": warehouse_name,
+                "company": company,
+                "is_group": 0,
+                "custom_branch": doc.name,
+            }
+        )
+        if PARENT_WAREHOUSE:
+            warehouse.parent_warehouse = PARENT_WAREHOUSE
+        warehouse.insert(ignore_permissions=True)
+        warehouse_id = warehouse.name
 
-    existing_warehouse = frappe.db.get_value(
-        "Warehouse",
-        {
-            "warehouse_name": branch_name,
-            "company": company
-        },
-        "name"
-    )
-
-    if existing_warehouse:
-
-        warehouse_name = existing_warehouse
-
-    else:
-
-        # --------------------------------------------------
-        # 6. Create New Warehouse
-        # --------------------------------------------------
-
-        warehouse_data = {
-            "doctype": "Warehouse",
-            "warehouse_name": branch_name,
-            "company": company,
-            "parent_warehouse": root_warehouse,
-            "is_group": 0
-        }
-
-        # Link Branch if Warehouse has a Branch field
-        if frappe.get_meta("Warehouse").has_field("branch"):
-            warehouse_data["branch"] = doc.name
-
-        warehouse_doc = frappe.get_doc(warehouse_data)
-
-        warehouse_doc.insert(ignore_permissions=True)
-
-        warehouse_name = warehouse_doc.name
-
-    # --------------------------------------------------
-    # 7. Link Warehouse to Branch
-    # --------------------------------------------------
-
-    doc.db_set(
-        "warehouse",
-        warehouse_name,
-        update_modified=False
-    )
-
-    # --------------------------------------------------
-    # 8. Success Message
-    # --------------------------------------------------
-
+    # Branch is already saved at after_insert, so write the link directly.
+    doc.db_set("custom_warehouse", warehouse_id)
     frappe.msgprint(
-        msg=f"Warehouse <b>{warehouse_name}</b> successfully linked to Branch <b>{branch_name}</b>.",
-        title="Warehouse Created",
-        indicator="green"
-    )
-
-    frappe.logger().info(
-        f"Branch Warehouse Created: {branch_name} -> {warehouse_name}"
+        _("Warehouse {0} linked to branch {1}").format(warehouse_id, doc.name),
+        alert=True,
     )
