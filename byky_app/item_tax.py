@@ -17,7 +17,7 @@ BOX_ENTRY_REQUIRED = "box_required"      # Box Required field of that table
 NEEDED = "Needed"                        # value of Box Required when boxes are needed
 IS_BOX_FIELD = "custom_is_box"           # item row check: this row is a box row
 
-TAX_FIELD = "custom_tax_amount"
+TAX_FIELD = "tax_amount"
 NET_WITH_TAX_FIELD = "custom_net_amount_with_tax"
 
 
@@ -32,11 +32,29 @@ def _box_name_field():
 # ---------------------------------------------------------------------------
 # Purchase Order + Purchase Invoice: per-row tax (validate)
 # ---------------------------------------------------------------------------
-def set_row_tax(doc, method=None):
-    """Split each tax line's amount to the item rows and store it in the
-    Tax Amount / Net Amount (With Tax) fields of the row."""
+def _template_rate(row):
+    """Total tax rate (%) of the row: its Item Tax Rate, or else its Item Tax Template."""
+    try:
+        rates = json.loads(row.get("item_tax_rate") or "{}")
+    except ValueError:
+        rates = {}
+    if rates:
+        return sum(flt(v) for v in rates.values())
 
-       # item_wise_tax_detail holds company-currency amounts; the rows are in document currency
+    template = row.get("item_tax_template")
+    if template and frappe.db.exists("Item Tax Template", template):
+        taxes = frappe.get_cached_doc("Item Tax Template", template).get("taxes") or []
+        return sum(flt(t.tax_rate) for t in taxes)
+    return 0
+
+
+def set_row_tax(doc, method=None):
+    """Fill Tax Amount and Net Amount (With Tax) on every item row.
+
+    1. If the Taxes and Charges table has tax for the item, split it over the item's rows.
+    2. Otherwise use the Item Tax Template rate: tax = net amount x rate / 100.
+    Net Amount (With Tax) = net amount + tax amount.
+    """
     conversion_rate = flt(doc.get("conversion_rate")) or 1
 
     tax_by_key = {}
@@ -46,27 +64,49 @@ def set_row_tax(doc, method=None):
         except ValueError:
             detail = {}
         for key, val in detail.items():
-            amount = flt(val[1]) / conversion_rate if isinstance(val, (list, tuple)) and len(val) > 1 else 0
+            if isinstance(val, (list, tuple)) and len(val) > 1:
+                amount = flt(val[1]) / conversion_rate
+            else:
+                amount = 0
             tax_by_key[key] = tax_by_key.get(key, 0) + amount
-    # same item on several rows (identify row + box rows): share the tax by net amount
+
     rows_by_key = {}
     for row in doc.items:
         key = row.item_code or row.item_name
         rows_by_key.setdefault(key, []).append(row)
 
     for key, rows in rows_by_key.items():
-        total_tax = tax_by_key.get(key, 0)
-        total_net = sum(flt(r.net_amount or r.amount) for r in rows)
 
+        # 1. tax comes from the Taxes and Charges table
+        if key in tax_by_key:
+            total_tax = flt(tax_by_key[key])
+            total_net = sum(flt(r.net_amount or r.amount) for r in rows)
+            allocated = 0
+
+            for i, r in enumerate(rows):
+                base = flt(r.net_amount or r.amount)
+                precision = r.precision("amount")
+
+                if i == len(rows) - 1:
+                    tax_amount = flt(total_tax - allocated, precision)   # rounding remainder
+                else:
+                    share = (base / total_net) if total_net else 0
+                    tax_amount = flt(total_tax * share, precision)
+                    allocated += tax_amount
+
+                r.set(TAX_FIELD, tax_amount)
+                r.set(NET_WITH_TAX_FIELD, flt(base + tax_amount, precision))
+            continue
+
+        # 2. no tax row: use the Item Tax Template rate
         for r in rows:
             base = flt(r.net_amount or r.amount)
-            share = (base / total_net) if total_net else 0
-            tax_amount = flt(total_tax * share, r.precision("amount"))
+            precision = r.precision("amount")
+            tax_amount = flt(base * _template_rate(r) / 100, precision)
 
             r.set(TAX_FIELD, tax_amount)
-            r.set(NET_WITH_TAX_FIELD, flt(base + tax_amount, r.precision("amount")))
-
-
+            r.set(NET_WITH_TAX_FIELD, flt(base + tax_amount, precision))
+            
 # ---------------------------------------------------------------------------
 # Purchase Invoice: identify row + box rows (before_validate)
 # ---------------------------------------------------------------------------
