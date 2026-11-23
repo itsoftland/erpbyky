@@ -299,17 +299,6 @@
  {
   "docstatus": 0,
   "doctype": "Client Script",
-  "dt": "Branch",
-  "enabled": 1,
-  "modified": "2026-11-19 15:44:45.100287",
-  "module": "Byky App",
-  "name": "Branch - Create Branch Warehouse",
-  "script": "frappe.ui.form.on(\"Branch\", {\n    refresh(frm) {\n        // The warehouse is created and linked by the server\n        frm.set_df_property(\"warehouse\", \"read_only\", 1);\n\n        if (frm.is_new()) {\n            frm.set_intro(\n                \"A Warehouse with this branch's name will be created automatically when you save.\",\n                \"blue\"\n            );\n        }\n    },\n});",
-  "view": "Form"
- },
- {
-  "docstatus": 0,
-  "doctype": "Client Script",
   "dt": "Stock Entry",
   "enabled": 1,
   "modified": "2026-11-05 15:34:57.391390",
