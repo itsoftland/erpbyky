@@ -448,65 +448,65 @@ override_whitelisted_methods = {
         "byky_app.purchase_invoice.make_purchase_receipt",
 }
 
-# #""""""""""""""""""
-# # ERP TO RMS SYN 
-# #""""""""""""""""""
-# # Master data synchronised to RMS (Serial No is NOT here: vehicles go through
-# # the Manufacture submit hook and the 5-minute sweep).
-# _RMS_MASTERS = [
-#     "Country",
-#     "State",
-#     "Branch Type",
-#     "Branch",
-#     "Event Location",
-#     "Warehouse",
-#     "Designation",
-#     "Employee",
-#     "Department",
-#     "Brand",
-#     "Item Group",
-#     "Item",
-#     "Asset",
-# ]
+#""""""""""""""""""
+# ERP TO RMS SYN 
+#""""""""""""""""""
+# Master data synchronised to RMS (Serial No is NOT here: vehicles go through
+# the Manufacture submit hook and the 5-minute sweep).
+_RMS_MASTERS = [
+    "Country",
+    "State",
+    "Branch Type",
+    "Branch",
+    "Event Location",
+    "Warehouse",
+    "Designation",
+    "Employee",
+    "Department",
+    "Brand",
+    "Item Group",
+    "Item",
+    "Asset",
+]
 
-# _RMS_EVENTS = {
-#     "after_insert": "byky_app.rms_sync.on_insert",
-#     "on_update": "byky_app.rms_sync.on_update",
-#     "on_trash": "byky_app.rms_sync.on_trash",
-# }
+_RMS_EVENTS = {
+    "after_insert": "byky_app.rms_sync.on_insert",
+    "on_update": "byky_app.rms_sync.on_update",
+    "on_trash": "byky_app.rms_sync.on_trash",
+}
 
-# doc_events = {
-#     # Keep your other existing entries here (Service Entry, finished goods,
-#     # Purchase Order etc.). If one of them is also a DocType above, merge the
-#     # events into the same dict instead of repeating the key.
+doc_events = {
+    # Keep your other existing entries here (Service Entry, finished goods,
+    # Purchase Order etc.). If one of them is also a DocType above, merge the
+    # events into the same dict instead of repeating the key.
 
-#     **{doctype: dict(_RMS_EVENTS) for doctype in _RMS_MASTERS},
+    **{doctype: dict(_RMS_EVENTS) for doctype in _RMS_MASTERS},
 
-#     # Branch: the warehouse must be created and linked BEFORE the RMS hook
-#     # runs, so the message sent to RMS already contains the warehouse.
-#     "Branch": {
-#         "after_insert": [
-#             "byky_app.branch.create_branch_warehouse",
-#             "byky_app.rms_sync.on_insert",
-#         ],
-#         "on_update": "byky_app.rms_sync.on_update",
-#         "on_trash": "byky_app.rms_sync.on_trash",
-#     },
+    # Branch: the warehouse must be created and linked BEFORE the RMS hook
+    # runs, so the message sent to RMS already contains the warehouse.
+    "Branch": {
+        "after_insert": [
+            "byky_app.branch.create_branch_warehouse",
+            "byky_app.rms_sync.on_insert",
+        ],
+        "on_update": "byky_app.rms_sync.on_update",
+        "on_trash": "byky_app.rms_sync.on_trash",
+    },
 
-#     # Vehicle synchronization happens on Manufacture submission.
-#     "Stock Entry": {
-#         "on_submit": "byky_app.rms_sync.on_manufacture_submit"
-#     },
-# }
+    # Vehicle synchronization happens on Manufacture submission.
+    "Stock Entry": {
+        "on_submit": "byky_app.rms_sync.on_manufacture_submit"
+    },
+}
 
 
-# scheduler_events = {
-#     "cron": {
-#         "*/5 * * * *": [
-#             "byky_app.rms_sync.sync_pending_serial_nos",
-#             # Back-off starts at 5 minutes, so this runs every 5 minutes
-#             # (it only sends rows that are due).
-#             "byky_app.rms_sync.retry_failed",
-#         ],
-#     },
-# }
+scheduler_events = {
+    "cron": {
+        "*/5 * * * *": [
+            "byky_app.rms_sync.sync_pending_serial_nos",
+            # Back-off starts at 5 minutes, so this runs every 5 minutes
+            # (it only sends rows that are due).
+            "byky_app.rms_sync.retry_failed",
+        ],
+    },
+}

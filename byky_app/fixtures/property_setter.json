@@ -2791,12 +2791,12 @@
   "doctype_or_field": "DocType",
   "field_name": null,
   "is_system_generated": 0,
-  "modified": "2026-11-24 10:19:34.529604",
+  "modified": "2026-11-24 10:25:22.303121",
   "module": null,
   "name": "Brand-main-field_order",
   "property": "field_order",
   "property_type": "Data",
   "row_name": null,
-  "value": "[\"brand\", \"brand_code\", \"image\", \"custom_website_link\", \"status\", \"custom_column_break_tupps\", \"description\", \"custom_manufacturer\", \"defaults\", \"brand_defaults\"]"
+  "value": "[\"brand\", \"custom_brand_code\", \"image\", \"custom_website_link\", \"custom_status\", \"custom_column_break_tupps\", \"description\", \"custom_manufacturer\", \"defaults\", \"brand_defaults\"]"
  }
 ]
