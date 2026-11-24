@@ -363,6 +363,7 @@ doc_events = {
     "Stock Entry": {
     "before_validate": [
         "byky_app.storage_location.copy_work_order_storage_locations",
+        "byky_app.storage_location.auto_fill_transfer_locations",
         "byky_app.box_unpacking.allocate_rates",
         "byky_app.stock_entry.fill_box_name",
     ],
@@ -419,6 +420,9 @@ doc_events = {
             "byky_app.item_tax.set_row_tax",
             "byky_app.item_tax.fill_box_entries",
         ],
+    },
+    "Serial No": {
+        "before_validate": "byky_app.serial_no_production_date.set_production_date",
     },
      
     "Branch": {

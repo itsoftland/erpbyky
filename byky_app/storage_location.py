@@ -268,6 +268,101 @@ def copy_work_order_storage_locations(doc, method=None):
 
 
 # ---------------------------------------------------------
+# AUTO-FILL STORAGE LOCATIONS FOR MATERIAL TRANSFER
+# ---------------------------------------------------------
+
+def auto_fill_transfer_locations(doc, method=None):
+    """
+    Material Transfer: make sure both sides of the move have a Storage
+    Location row, so the Item's storage table is reduced at the source
+    and increased at the target on submit.
+
+      - source side (on Submit only): if the user has NOT entered a row for the
+        item in the source warehouse, rows are built from the Item's own storage rows
+        in that warehouse (works with or without 'Is Warehouse storage').
+        If the Item has no storage rows at all in the source warehouse
+        (for example a box just received and not yet stored), the source
+        side is skipped.
+      - target side: only when 'Is Warehouse storage' is ticked and the
+        user has not entered a row for the target warehouse, one
+        warehouse-level row is added (no floor/area/shelf/rack).
+    """
+    # docstatus is 1 during before_validate when the user clicks Submit,
+    # so allow 0 (Save) and 1 (Submit).
+    if doc.docstatus not in (0, 1) or doc.purpose != "Material Transfer":
+        return
+
+    warehouse_storage = bool(doc.get("custom_is_warehouse_storage_"))
+
+    # (item, warehouse) pairs already covered by rows in the table
+    covered = {
+        (r.item, normalize(r.warehouse))
+        for r in doc.get(LOCATION_TABLE) or []
+        if r.item
+    }
+
+    for it in doc.get("items") or []:
+        if not it.s_warehouse or not it.t_warehouse or it.s_warehouse == it.t_warehouse:
+            continue
+
+        total = flt(it.qty) * flt(it.conversion_factor or 1)
+        source_key = (it.item_code, normalize(it.s_warehouse))
+        target_key = (it.item_code, normalize(it.t_warehouse))
+
+        # ---- source side: reduce from the Item's rows in the source warehouse
+        # Added only when the user clicks Submit (docstatus 1). While the entry is
+        # a draft, the Client Script treats every storage row of the item as a
+        # TARGET row (it copies its warehouse into the target warehouse), so a
+        # source row saved in the draft would overwrite the target warehouse.
+        if doc.docstatus == 1 and source_key not in covered:
+
+            # Fresh read, not cached, so quantities are current
+            item_doc = frappe.get_doc("Item", it.item_code)
+
+            source_rows = [
+                loc for loc in item_doc.get(LOCATION_TABLE) or []
+                if normalize(loc.warehouse) == normalize(it.s_warehouse)
+                and flt(loc.quantity) > 0
+            ]
+
+            if source_rows:
+                remaining = total
+
+                for loc in source_rows:
+                    if remaining <= 0:
+                        break
+
+                    take = min(flt(loc.quantity), remaining)
+
+                    row = doc.append(LOCATION_TABLE, {})
+                    row.item = it.item_code
+                    for f in LOCATION_FIELDS:
+                        row.set(f, loc.get(f))
+                    row.uom = loc.uom or it.stock_uom
+                    row.quantity = take
+                    remaining -= take
+
+                if remaining > 0:
+                    frappe.throw(
+                        f"Item {it.item_code}: only {total - remaining} is recorded in "
+                        f"storage locations of {it.s_warehouse}, but {total} is "
+                        f"being transferred."
+                    )
+
+                covered.add(source_key)
+
+        # ---- target side: one warehouse-level row (Is Warehouse storage only)
+        if warehouse_storage and target_key not in covered:
+            row = doc.append(LOCATION_TABLE, {})
+            row.item = it.item_code
+            row.warehouse = it.t_warehouse
+            row.uom = it.stock_uom
+            row.quantity = total
+
+            covered.add(target_key)
+
+
+# ---------------------------------------------------------
 # UPDATE ITEM STORAGE LOCATIONS
 # ---------------------------------------------------------
 
