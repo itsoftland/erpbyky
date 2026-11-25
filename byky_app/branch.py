@@ -1,93 +1,62 @@
+"""
+byky_app/branch.py
+
+Creates a Warehouse named after the Branch when a Branch is created, and links both:
+    Branch.custom_warehouse  -> Warehouse
+    Warehouse.custom_branch  -> Branch
+
+hooks.py (already pointing here, keep only this one entry for Branch):
+
+    doc_events = {
+        "Branch": {
+            "after_insert": "byky_app.branch.create_branch_warehouse",
+        },
+    }
+"""
+
 import frappe
+from frappe import _
+
+# Optional: e.g. "All Warehouses - B". Leave None to use the company default.
+PARENT_WAREHOUSE = None
 
 
 def create_branch_warehouse(doc, method=None):
-    """Automatically create and link a Warehouse when a Branch is created.
-
-    Hook it on Branch -> after_insert, BEFORE byky_app.rms_sync.on_insert, so
-    the Branch message sent to RMS already contains the linked warehouse.
-    """
-
-    # Stop if Warehouse is already linked
-    if doc.get("warehouse"):
+    warehouse_name = (doc.branch or "").strip()
+    if not warehouse_name:
         return
 
-    # Get Branch name
-    branch_name = doc.get("branch") or doc.name
-
-    if not branch_name:
-        frappe.throw("Branch name is required.")
-
-    # Get Company
-    company = (
-        doc.get("company")
-        or frappe.defaults.get_global_default("company")
+    company = doc.get("custom_company") or frappe.db.get_single_value(
+        "Global Defaults", "default_company"
     )
-
     if not company:
-        frappe.throw("Please configure a Default Company.")
+        frappe.throw(_("Set a Company on the Branch or a default company in Global Defaults."))
 
-    # Check whether Warehouse already exists
     existing = frappe.db.get_value(
-        "Warehouse",
-        {
-            "warehouse_name": branch_name,
-            "company": company,
-        },
-        "name",
+        "Warehouse", {"warehouse_name": warehouse_name, "company": company}, "name"
     )
 
     if existing:
-        warehouse_name = existing
-
+        warehouse_id = existing
+        frappe.db.set_value("Warehouse", warehouse_id, "custom_branch", doc.name)
     else:
-        # Find the Company's root Warehouse
-        root = frappe.db.sql(
-            """
-            SELECT name
-            FROM `tabWarehouse`
-            WHERE company = %s
-              AND is_group = 1
-              AND (parent_warehouse IS NULL
-                   OR parent_warehouse = '')
-            ORDER BY lft
-            LIMIT 1
-            """,
-            (company,),
-            as_dict=True,
+        warehouse = frappe.get_doc(
+            {
+                "doctype": "Warehouse",
+                "warehouse_name": warehouse_name,
+                "company": company,
+                "is_group": 0,
+                "custom_branch": doc.name,
+            }
         )
-
-        if not root:
-            frappe.throw(
-                f"No root Warehouse found for Company {company}. "
-                "Please create the Company's root Warehouse first."
-            )
-
-        warehouse_data = {
-            "doctype": "Warehouse",
-            "warehouse_name": branch_name,
-            "company": company,
-            "parent_warehouse": root[0].name,
-            "is_group": 0,
-        }
-
-        # Set Branch link if Warehouse has this field
-        if frappe.get_meta("Warehouse").has_field("branch"):
-            warehouse_data["branch"] = doc.name
-
-        # Create Warehouse
-        warehouse = frappe.get_doc(warehouse_data)
+        if PARENT_WAREHOUSE:
+            warehouse.parent_warehouse = PARENT_WAREHOUSE
         warehouse.insert(ignore_permissions=True)
+        warehouse_id = warehouse.name
 
-        warehouse_name = warehouse.name
-
-    # Link Warehouse to Branch
-    doc.db_set(
-        "warehouse",
-        warehouse_name,
-        update_modified=False,
-    )
-
-    frappe.logger().info(
-        f"Warehouse {warehouse_name} linked to Branch {doc.name}"
+    # Branch is already saved at after_insert, so write the link directly.
+    doc.db_set("custom_warehouse", warehouse_id)
+    frappe.msgprint(
+        _("Warehouse {0} linked to branch {1}").format(warehouse_id, doc.name),
+        alert=True,
     )
