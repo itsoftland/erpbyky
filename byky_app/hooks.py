@@ -5,253 +5,12 @@ app_description = "Byky ERP Management System"
 app_email = "byky@gmail.com"
 app_license = "mit"
 
-# Apps
-# ------------------
-
-# required_apps = []
-
-# Each item in the list will be shown as an app in the apps page
-# add_to_apps_screen = [
-# 	{
-# 		"name": "byky_app",
-# 		"logo": "/assets/byky_app/logo.png",
-# 		"title": "Byky App",
-# 		"route": "/byky_app",
-# 		"has_permission": "byky_app.api.permission.has_app_permission"
-# 	}
-# ]
-
-# Includes in <head>
-# ------------------
-
-# include js, css files in header of desk.html
-# app_include_css = "/assets/byky_app/css/byky_app.css"
-# app_include_js = "/assets/byky_app/js/byky_app.js"
-
-# include js, css files in header of web template
-# web_include_css = "/assets/byky_app/css/byky_app.css"
-# web_include_js = "/assets/byky_app/js/byky_app.js"
-
-# include custom scss in every website theme (without file extension ".scss")
-# website_theme_scss = "byky_app/public/scss/website"
-
-# include js, css files in header of web form
-# webform_include_js = {"doctype": "public/js/doctype.js"}
-# webform_include_css = {"doctype": "public/css/doctype.css"}
-
-# include js in page
-# page_js = {"page" : "public/js/file.js"}
-
-# include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
-# doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
-# doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
-# doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
-
-# Svg Icons
-# ------------------
-# include app icons in desk
-# app_include_icons = "byky_app/public/icons.svg"
-
-# Home Pages
-# ----------
-
-# application home page (will override Website Settings)
-# home_page = "login"
-
-# website user home page (by Role)
-# role_home_page = {
-# 	"Role": "home_page"
-# }
-
-# Generators
-# ----------
-
-# automatically create page for each record of this doctype
-# website_generators = ["Web Page"]
-
-# Jinja
-# ----------
-
-# add methods and filters to jinja environment
-# jinja = {
-# 	"methods": "byky_app.utils.jinja_methods",
-# 	"filters": "byky_app.utils.jinja_filters"
-# }
-
-# Installation
-# ------------
-
-# before_install = "byky_app.install.before_install"
-# after_install = "byky_app.install.after_install"
-
-# Uninstallation
-# ------------
-
-# before_uninstall = "byky_app.uninstall.before_uninstall"
-# after_uninstall = "byky_app.uninstall.after_uninstall"
-
-# Integration Setup
-# ------------------
-# To set up dependencies/integrations with other apps
-# Name of the app being installed is passed as an argument
-
-# before_app_install = "byky_app.utils.before_app_install"
-# after_app_install = "byky_app.utils.after_app_install"
-
-# Integration Cleanup
-# -------------------
-# To clean up dependencies/integrations with other apps
-# Name of the app being uninstalled is passed as an argument
-
-# before_app_uninstall = "byky_app.utils.before_app_uninstall"
-# after_app_uninstall = "byky_app.utils.after_app_uninstall"
-
-# Desk Notifications
-# ------------------
-# See frappe.core.notifications.get_notification_config
-
-# notification_config = "byky_app.notifications.get_notification_config"
-
-# Permissions
-# -----------
-# Permissions evaluated in scripted ways
-
-# permission_query_conditions = {
-# 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
-# }
-#
-# has_permission = {
-# 	"Event": "frappe.desk.doctype.event.event.has_permission",
-# }
-
-# DocType Class
-# ---------------
-# Override standard doctype classes
-
-# override_doctype_class = {
-# 	"ToDo": "custom_app.overrides.CustomToDo"
-# }
-
-# Document Events
-# ---------------
-# Hook on document methods and events
-
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
-
-# Scheduled Tasks
-# ---------------
-
-# scheduler_events = {
-# 	"all": [
-# 		"byky_app.tasks.all"
-# 	],
-# 	"daily": [
-# 		"byky_app.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"byky_app.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"byky_app.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"byky_app.tasks.monthly"
-# 	],
-# }
-
-# Testing
-# -------
-
-# before_tests = "byky_app.install.before_tests"
-
-# Overriding Methods
-# ------------------------------
-#
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "byky_app.event.get_events"
-# }
-#
-# each overriding function accepts a `data` argument;
-# generated from the base implementation of the doctype dashboard,
-# along with any modifications made in other Frappe apps
-# override_doctype_dashboards = {
-# 	"Task": "byky_app.task.get_dashboard_data"
-# }
-
-# exempt linked doctypes from being automatically cancelled
-#
-# auto_cancel_exempted_doctypes = ["Auto Repeat"]
-
-# Ignore links to specified DocTypes when deleting documents
-# -----------------------------------------------------------
-
-# ignore_links_on_delete = ["Communication", "ToDo"]
-
-# Request Events
-# ----------------
-# before_request = ["byky_app.utils.before_request"]
-# after_request = ["byky_app.utils.after_request"]
-
-# Job Events
-# ----------
-# before_job = ["byky_app.utils.before_job"]
-# after_job = ["byky_app.utils.after_job"]
-
-# User Data Protection
-# --------------------
-
-# user_data_fields = [
-# 	{
-# 		"doctype": "{doctype_1}",
-# 		"filter_by": "{filter_by}",
-# 		"redact_fields": ["{field_1}", "{field_2}"],
-# 		"partial": 1,
-# 	},
-# 	{
-# 		"doctype": "{doctype_2}",
-# 		"filter_by": "{filter_by}",
-# 		"partial": 1,
-# 	},
-# 	{
-# 		"doctype": "{doctype_3}",
-# 		"strict": False,
-# 	},
-# 	{
-# 		"doctype": "{doctype_4}"
-# 	}
-# ]
-
-# Authentication and authorization
-# --------------------------------
-
-# auth_hooks = [
-# 	"byky_app.auth.validate"
-# ]
-
-# Automatically update python controller files with type annotations for this app.
-# export_python_type_annotations = True
-
-# default_log_clearing_doctypes = {
-# 	"Logging DocType Name": 30  # days to retain logs
-# }
-
-# Translation
-# ------------
-# List of apps whose translatable strings should be excluded from this app's translations.
-# ignore_translatable_strings
-
-
+# (The standard commented-out template sections of hooks.py were removed here.
+#  Nothing in them was active. Add back any you use.)
 
 fixtures = [
     # Custom DocTypes
-   {"dt": "DocType", "filters": [["module", "=", "Byky App"], ["custom", "=", 1]]},
+    {"dt": "DocType", "filters": [["module", "=", "Byky App"], ["custom", "=", 1]]},
 
     # Custom Fields
     {
@@ -301,14 +60,16 @@ fixtures = [
             ["standard", "=", "No"]
         ]
     },
-        # Web Pages
+
+    # Web Pages
     {
         "dt": "Web Page",
         "filters": [
             ["route", "=", "item-storage-location"]
         ]
     },
-      # Client Scripts
+
+    # Client Scripts
     {
         "dt": "Client Script",
         "filters": [
@@ -327,7 +88,7 @@ fixtures = [
                 "Work Order Form Storage Button",
                 "Stock Entry Storage Location Cascading Filter",
                 "Stock Entry - Storage Location Items Autofetch",
-                "Storage Rack — filter by Warehouse, Floor, Area, and Shelf",   
+                "Storage Rack — filter by Warehouse, Floor, Area, and Shelf",
                 "Shelf — filter by Warehouse, Floor, and Area",
                 "Storage Area — filter by Warehouse and Floor",
                 "Service Entry Serviced Items Cascading Filter",
@@ -345,58 +106,62 @@ fixtures = [
                 "Purchase Order - Supplier Wise Items",
                 "Hide Purchase Receipt Until Invoiced",
                 "Receipt Items Only From Invoice",
-                # "Purchase Invoice - Convert Finished Good to Boxes", ##
+                # "Purchase Invoice - Convert Finished Good to Boxes",
                 "Stock Entry Box Unpacking",
                 "Box Entry - Autofill From Purchase Invoice",
                 "Purchase Invoice - Box Entry Defaults",
                 "Purchase Invoice - Packaging Table",
                 "Stock Entry - Box Name Popup",
                 "Work Order - Item Storage Location Filters",
-                "Purchase Order – Tax Percentage Display"
+                "Purchase Order – Tax Percentage Display",
             ]]
         ]
     },
 ]
 
-# Document Events
+# ---------------------------------------------------------------------------
+# Document Events  (ONE doc_events dict only: a second assignment would
+# replace this one completely)
+# ---------------------------------------------------------------------------
 doc_events = {
     "Stock Entry": {
-    "before_validate": [
-        "byky_app.storage_location.copy_work_order_storage_locations",
-        "byky_app.storage_location.auto_fill_transfer_locations",
-        "byky_app.box_unpacking.allocate_rates",
-        "byky_app.stock_entry.fill_box_name",
-    ],
-    "validate": [
-        "byky_app.box_unpacking.validate_box_unpacking",
-    ],
-    "on_submit": [
-        "byky_app.storage_location.update_item_storage_locations",
-        "byky_app.stock_ledger_location.apply_locations_to_ledger",
-        "byky_app.finished_item_storage.on_submit",
-    ],
-    "on_cancel": [
-        "byky_app.storage_location.reverse_item_storage_locations",
-        "byky_app.finished_item_storage.on_cancel",
-    ],
-},
-    
-  "Service Entry": {
-    "before_submit": "byky_app.service_entry_stock.check_submit_status",
-    "on_update": "byky_app.service_entry_stock.sync_vehicle_transfer",
-    "on_submit": [
-        "byky_app.service_entry_stock.process_service_stock",
-        "byky_app.autocreate_tear_down_request.create_tear_down_request",
-        "byky_app.service_entry_stock.close_service_request",
-    ],
-    "on_cancel": [
-        "byky_app.service_entry_stock.reverse_service_stock",
-        "byky_app.service_entry_stock.reopen_service_request",
-        "byky_app.service_entry_stock.reverse_vehicle_transfer",
-    ],
-    "on_trash": "byky_app.service_entry_stock.reverse_vehicle_transfer",
-},
-   
+        "before_validate": [
+            "byky_app.storage_location.copy_work_order_storage_locations",
+            "byky_app.storage_location.auto_fill_transfer_locations",
+            "byky_app.box_unpacking.allocate_rates",
+            "byky_app.stock_entry.fill_box_name",
+        ],
+        "validate": [
+            "byky_app.box_unpacking.validate_box_unpacking",
+        ],
+        "on_submit": [
+            "byky_app.storage_location.update_item_storage_locations",
+            "byky_app.stock_ledger_location.apply_locations_to_ledger",
+            "byky_app.finished_item_storage.on_submit",
+            "byky_app.rms_sync.on_manufacture_submit",
+        ],
+        "on_cancel": [
+            "byky_app.storage_location.reverse_item_storage_locations",
+            "byky_app.finished_item_storage.on_cancel",
+        ],
+    },
+
+    "Service Entry": {
+        "before_submit": "byky_app.service_entry_stock.check_submit_status",
+        "on_update": "byky_app.service_entry_stock.sync_vehicle_transfer",
+        "on_submit": [
+            "byky_app.service_entry_stock.process_service_stock",
+            "byky_app.autocreate_tear_down_request.create_tear_down_request",
+            "byky_app.service_entry_stock.close_service_request",
+        ],
+        "on_cancel": [
+            "byky_app.service_entry_stock.reverse_service_stock",
+            "byky_app.service_entry_stock.reopen_service_request",
+            "byky_app.service_entry_stock.reverse_vehicle_transfer",
+        ],
+        "on_trash": "byky_app.service_entry_stock.reverse_vehicle_transfer",
+    },
+
     "Vehicle Tear Down": {
         "validate": "byky_app.vehicle_tear_down.validate_vehicle_tear_down",
         "on_update": "byky_app.vehicle_tear_down.close_tear_down_request",
@@ -405,42 +170,42 @@ doc_events = {
             "byky_app.vehicle_tear_down.reverse_vehicle_tear_down",
             "byky_app.vehicle_tear_down.reopen_tear_down_request",
         ],
-    },  
-     "Purchase Order": {
+    },
+
+    "Purchase Order": {
         "before_validate": "byky_app.finished_good.zero_value",
         "validate": "byky_app.item_tax.set_row_tax",
     },
+
+    # one before_validate key only (a repeated key silently drops the first)
     "Purchase Receipt": {
-        "before_validate": "byky_app.finished_good.add_box_items",
-        "before_validate": "byky_app.stock_entry.fill_box_name",
+        "before_validate": [
+            "byky_app.finished_good.add_box_items",
+            "byky_app.stock_entry.fill_box_name",
+        ],
     },
-     "Purchase Invoice": {
+
+    "Purchase Invoice": {
         "before_validate": "byky_app.item_tax.process_box_rows",
         "validate": [
             "byky_app.item_tax.set_row_tax",
             "byky_app.item_tax.fill_box_entries",
         ],
     },
+
     "Serial No": {
         "before_validate": "byky_app.serial_no_production_date.set_production_date",
     },
-     
+
+    # the RMS hooks are added to this one by the loop at the bottom of the block
     "Branch": {
         "after_insert": "byky_app.branch_warehouse.create_warehouse_for_branch",
     },
-    "Category": {
-        "on_update": "byky_app.category.sync_item_group"
-    },
-    "Box Entry": {
-        "on_update": "byky_app.box_entry.sync_box_item"
-    },
-    "Vehicle Type": {
-        "on_update": "byky_app.vehicle_type.sync_vehicle_item"
-    },
-    "Spares": {
-        "on_update": "byky_app.spares.sync_spare_item"
-    },
-    
+
+    "Category": {"on_update": "byky_app.category.sync_item_group"},
+    "Box Entry": {"on_update": "byky_app.box_entry.sync_box_item"},
+    "Vehicle Type": {"on_update": "byky_app.vehicle_type.sync_vehicle_item"},
+    "Spares": {"on_update": "byky_app.spares.sync_spare_item"},
 }
 
 override_whitelisted_methods = {
@@ -448,9 +213,9 @@ override_whitelisted_methods = {
         "byky_app.purchase_invoice.make_purchase_receipt",
 }
 
-#""""""""""""""""""
-# ERP TO RMS SYN 
-#""""""""""""""""""
+# ---------------------------------------------------------------------------
+# ERP TO RMS SYNC
+# ---------------------------------------------------------------------------
 # Master data synchronised to RMS (Serial No is NOT here: vehicles go through
 # the Manufacture submit hook and the 5-minute sweep).
 _RMS_MASTERS = [
@@ -475,29 +240,14 @@ _RMS_EVENTS = {
     "on_trash": "byky_app.rms_sync.on_trash",
 }
 
-doc_events = {
-    # Keep your other existing entries here (Service Entry, finished goods,
-    # Purchase Order etc.). If one of them is also a DocType above, merge the
-    # events into the same dict instead of repeating the key.
-
-    **{doctype: dict(_RMS_EVENTS) for doctype in _RMS_MASTERS},
-
-    # Branch: the warehouse must be created and linked BEFORE the RMS hook
-    # runs, so the message sent to RMS already contains the warehouse.
-    "Branch": {
-        "after_insert": [
-            "byky_app.branch.create_branch_warehouse",
-            "byky_app.rms_sync.on_insert",
-        ],
-        "on_update": "byky_app.rms_sync.on_update",
-        "on_trash": "byky_app.rms_sync.on_trash",
-    },
-
-    # Vehicle synchronization happens on Manufacture submission.
-    "Stock Entry": {
-        "on_submit": "byky_app.rms_sync.on_manufacture_submit"
-    },
-}
+# Add the RMS events to the doc_events above: merge, don't overwrite.
+# Existing handlers run first (Branch: the warehouse is created BEFORE RMS is told).
+for _doctype in _RMS_MASTERS:
+    _events = doc_events.setdefault(_doctype, {})
+    for _event, _handler in _RMS_EVENTS.items():
+        _existing = _events.get(_event, [])
+        _existing = [_existing] if isinstance(_existing, str) else list(_existing)
+        _events[_event] = _existing + [_handler]
 
 
 scheduler_events = {
