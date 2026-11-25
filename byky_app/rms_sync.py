@@ -23,6 +23,14 @@ from frappe.utils import add_to_date, now_datetime
 # "rename" maps an ERPNext fieldname to the key sent to RMS.
 # Confirm the key names with the RMS team.
 
+# Item Group Category Types that are sent to RMS (Item Groups, and the Items
+# that belong to them). Spare, Scarp and ReUse Spare are never sent.
+RMS_CATEGORY_TYPES = ["Vehicle", "Asset"]
+
+# Serial Nos are sent to RMS as vehicles only when the item's Item Group has
+# this Category Type. Asset groups never produce vehicles.
+RMS_VEHICLE_CATEGORY = "Vehicle"
+
 SYNC_MAP = {
     "Country": {
         "path": "/country",
@@ -122,8 +130,15 @@ SYNC_MAP = {
             "parent_item_group",
             "is_group",
             "custom_code",
+            "custom_category_type",
         ],
-        "rename": {"custom_code": "code"},
+        "rename": {
+            "custom_code": "code",
+            "custom_category_type": "category_type",
+        },
+        # Only Item Groups whose Category Type is Vehicle or Asset go to RMS.
+        # Spare, Scarp and ReUse Spare groups are never sent.
+        "sync_when": {"custom_category_type": RMS_CATEGORY_TYPES},
     },
 
     "Item": {
@@ -139,6 +154,17 @@ SYNC_MAP = {
             "serial_no_series",
             "disabled",
             "description",
+        ],
+        # An Item is sent only when its Item Group's Category Type qualifies.
+        # The group is looked up live, so no field is needed on Item and
+        # nothing goes stale when a group's Category Type changes.
+        "sync_when_linked": [
+            {
+                "field": "item_group",
+                "doctype": "Item Group",
+                "target_field": "custom_category_type",
+                "allowed": RMS_CATEGORY_TYPES,
+            },
         ],
     },
 
@@ -197,53 +223,24 @@ def _settings():
     return frappe.get_single("RMS Settings")
 
 
-def _expand_groups(groups):
-    """Include sub-groups of each configured Item Group."""
-    out = set()
-
-    for group in groups:
-        bounds = frappe.db.get_value(
-            "Item Group", group, ["lft", "rgt"]
-        )
-
-        if not bounds:
-            out.add(group)
-            continue
-
-        lft, rgt = bounds
-
-        out.update(
-            frappe.get_all(
-                "Item Group",
-                filters={"lft": [">=", lft], "rgt": ["<=", rgt]},
-                pluck="name",
-            )
-        )
-
-    return sorted(out)
-
-
-def get_rental_item_groups(settings=None):
+def is_rental_vehicle(item_code):
     """
-    Item Groups that are rental vehicles.
-    RMS Settings -> rental_item_groups (Small Text, one Item Group per line).
+    The one rule for vehicles: the item's Item Group has Category Type
+    "Vehicle" (RMS_VEHICLE_CATEGORY). Asset groups do not produce vehicles.
     """
-    settings = settings or _settings()
-
-    raw = settings.get("rental_item_groups") or ""
-
-    groups = [g.strip() for g in re.split(r"[\n,]+", raw) if g.strip()]
-
-    return _expand_groups(groups)
-
-
-def is_rental_vehicle(item_code, settings=None):
     if not item_code:
         return False
 
     item_group = frappe.db.get_value("Item", item_code, "item_group")
 
-    return item_group in get_rental_item_groups(settings)
+    if not item_group:
+        return False
+
+    category = frappe.db.get_value(
+        "Item Group", item_group, "custom_category_type"
+    )
+
+    return category == RMS_VEHICLE_CATEGORY
 
 
 # ============================================================
@@ -258,6 +255,62 @@ def _is_deactivated(doc):
         return doc.get("status") in ("Scrapped", "Sold")
 
     return bool(doc.get("disabled"))
+
+
+def should_sync(doc):
+    """
+    False when SYNC_MAP says this record must not go to RMS.
+
+    SYNC_MAP[doctype]["sync_when"]
+        {fieldname: [allowed values]} on the record itself.
+    SYNC_MAP[doctype]["sync_when_linked"]
+        [{"field", "doctype", "target_field", "allowed"}]: the value of
+        target_field on the linked document (looked up now) must be allowed.
+        Example: an Item is sent only if its Item Group's Category Type is
+        Vehicle or Asset.
+    """
+    cfg = SYNC_MAP.get(doc.doctype, {})
+
+    rules = cfg.get("sync_when") or {}
+
+    if not all(doc.get(field) in allowed for field, allowed in rules.items()):
+        return False
+
+    for rule in cfg.get("sync_when_linked") or []:
+        target = doc.get(rule["field"])
+
+        if not target:
+            return False
+
+        value = frappe.db.get_value(
+            rule["doctype"], target, rule["target_field"]
+        )
+
+        if value not in rule["allowed"]:
+            return False
+
+    return True
+
+
+def _sync_filters(doctype):
+    """The same rules as a frappe filter dict (for exports and bulk marking)."""
+    cfg = SYNC_MAP.get(doctype, {})
+
+    filters = {
+        field: ["in", allowed]
+        for field, allowed in (cfg.get("sync_when") or {}).items()
+    }
+
+    for rule in cfg.get("sync_when_linked") or []:
+        names = frappe.get_all(
+            rule["doctype"],
+            filters={rule["target_field"]: ["in", rule["allowed"]]},
+            pluck="name",
+        )
+
+        filters[rule["field"]] = ["in", names or [""]]
+
+    return filters
 
 
 def _build_data(doc, action):
@@ -362,6 +415,9 @@ def on_insert(doc, method=None):
     if doc.doctype not in SYNC_MAP or doc.doctype == "Serial No":
         return
 
+    if not should_sync(doc):
+        return
+
     _enqueue_change(doc, "create")
 
 
@@ -377,6 +433,32 @@ def on_update(doc, method=None):
 
     # on_update also runs inside an insert; on_insert handles that case.
     if doc.flags.in_insert or not before:
+        return
+
+    was_synced = should_sync(before)
+    now_synced = should_sync(doc)
+
+    # Never was and still is not sent to RMS (for example a Spare group).
+    if not was_synced and not now_synced:
+        return
+
+    # Became eligible (for example Category Type changed to Vehicle).
+    if not was_synced and now_synced:
+        already_sent = frappe.db.exists(
+            "RMS Sync Log",
+            {
+                "ref_doctype": doc.doctype,
+                "ref_name": doc.name,
+                "status": "Success",
+            },
+        )
+
+        _enqueue_change(doc, "update" if already_sent else "create")
+        return
+
+    # No longer eligible (for example changed to Spare): RMS deactivates it.
+    if was_synced and not now_synced:
+        _enqueue_change(doc, "deactivate")
         return
 
     fields = [f for f in SYNC_MAP[doc.doctype]["fields"] if f != "name"]
@@ -398,6 +480,9 @@ def on_trash(doc, method=None):
     """
 
     if doc.doctype not in SYNC_MAP or doc.doctype == "Serial No":
+        return
+
+    if not should_sync(doc):
         return
 
     _enqueue_change(doc, "deactivate")
@@ -747,7 +832,7 @@ def _send_vehicle_now(serial_no):
     return send(log_name)
 
 
-def _vehicle_needs_sending(serial_no, settings):
+def _vehicle_needs_sending(serial_no):
     values = frappe.db.get_value(
         "Serial No",
         serial_no,
@@ -762,7 +847,7 @@ def _vehicle_needs_sending(serial_no, settings):
         return False
 
     # Rental vehicles only.
-    if not is_rental_vehicle(values.item_code, settings):
+    if not is_rental_vehicle(values.item_code):
         return False
 
     # Already waiting to be sent or retried.
@@ -788,7 +873,7 @@ def sync_manufactured_serial_nos(stock_entry_name):
     """
     Called automatically after Manufacture Stock Entry submission.
 
-    Finds finished-product Serial Nos (rental vehicles only) and sends
+    Finds finished-product Serial Nos (vehicles only) and sends
     them to RMS.
     """
 
@@ -845,7 +930,7 @@ def sync_manufactured_serial_nos(stock_entry_name):
 
                 continue
 
-            if not _vehicle_needs_sending(serial_no, settings):
+            if not _vehicle_needs_sending(serial_no):
                 continue
 
             _send_vehicle_now(serial_no)
@@ -902,7 +987,7 @@ def retry_failed(limit=200):
 
 def sync_pending_serial_nos(batch=100):
     """
-    Safety-net synchronization for rental-vehicle Serial Nos that RMS has
+    Safety-net synchronization for vehicle Serial Nos that RMS has
     not received yet.
 
     Uses Serial No.rms_synced instead of a growing "not in" list. Serials
@@ -915,21 +1000,14 @@ def sync_pending_serial_nos(batch=100):
     if not settings.enabled:
         return
 
-    groups = get_rental_item_groups(settings)
-
-    if not groups:
-        frappe.logger().warning(
-            "RMS vehicle sweep skipped: no rental Item Groups configured."
-        )
-        return
-
     pending = frappe.db.sql(
         """
         select sn.name
         from `tabSerial No` sn
         inner join `tabItem` i on i.name = sn.item_code
+        inner join `tabItem Group` ig on ig.name = i.item_group
         where ifnull(sn.rms_synced, 0) = 0
-          and i.item_group in %(groups)s
+          and ig.custom_category_type = %(category)s
           and not exists (
               select 1
               from `tabRMS Sync Log` l
@@ -941,7 +1019,7 @@ def sync_pending_serial_nos(batch=100):
         order by sn.creation asc
         limit %(batch)s
         """,
-        {"groups": tuple(groups), "batch": batch},
+        {"category": RMS_VEHICLE_CATEGORY, "batch": batch},
         pluck="name",
     )
 
@@ -971,6 +1049,15 @@ def resend(doctype, name):
         frappe.throw(f"{doctype} is not synchronised with RMS.")
 
     doc = frappe.get_doc(doctype, name)
+
+    if not should_sync(doc):
+        frappe.throw(f"{doctype} {name} is not sent to RMS (see sync_when in SYNC_MAP).")
+
+    if doctype == "Serial No" and not is_rental_vehicle(doc.item_code):
+        frappe.throw(
+            f"Serial No {name} is not a vehicle (its Item Group's "
+            f"Category Type is not {RMS_VEHICLE_CATEGORY})."
+        )
 
     log_name = _queue(doc, "update")
 
@@ -1023,11 +1110,9 @@ def export_masters():
     bench --site <site> execute byky_app.rms_sync.export_masters
 
     Files are written to <site>/private/files/rms_export/.
-    Item and Serial No are limited to rental vehicles.
+    Item Group and Item follow the same rules as the live sync (Category Type
+    Vehicle or Asset). Serial No is limited to vehicles (Category Type Vehicle).
     """
-
-    settings = _settings()
-    groups = get_rental_item_groups(settings)
 
     folder = frappe.get_site_path("private", "files", "rms_export")
     os.makedirs(folder, exist_ok=True)
@@ -1041,22 +1126,21 @@ def export_masters():
             if f == "name" or meta.has_field(f)
         ]
 
-        filters = {}
+        if doctype != "Serial No":
+            rows = frappe.get_all(
+                doctype, fields=fields, filters=_sync_filters(doctype)
+            )
 
-        if doctype == "Item":
-            filters = {"item_group": ["in", groups]}
-
-        rows = frappe.get_all(doctype, fields=fields, filters=filters)
-
-        if doctype == "Serial No":
+        else:
             rows = frappe.db.sql(
                 """
                 select sn.{cols}
                 from `tabSerial No` sn
                 inner join `tabItem` i on i.name = sn.item_code
-                where i.item_group in %(groups)s
+                inner join `tabItem Group` ig on ig.name = i.item_group
+                where ig.custom_category_type = %(category)s
                 """.format(cols=", sn.".join(fields)),
-                {"groups": tuple(groups) or ("",)},
+                {"category": RMS_VEHICLE_CATEGORY},
                 as_dict=True,
             )
 
@@ -1080,24 +1164,26 @@ def mark_existing_as_synced(doctypes=None):
 
     bench --site <site> execute byky_app.rms_sync.mark_existing_as_synced
 
-    - rental-vehicle Serial Nos get rms_synced = 1 so the sweep skips them
+    - vehicle Serial Nos get rms_synced = 1 so the sweep skips them
     - every existing master gets a Success log row so it is shown as synced
     """
 
-    groups = get_rental_item_groups()
+    frappe.db.sql(
+        """
+        update `tabSerial No` sn
+        inner join `tabItem` i on i.name = sn.item_code
+        inner join `tabItem Group` ig on ig.name = i.item_group
+        set sn.rms_synced = 1
+        where ig.custom_category_type = %(category)s
+        """,
+        {"category": RMS_VEHICLE_CATEGORY},
+    )
 
-    if groups:
-        frappe.db.sql(
-            """
-            update `tabSerial No` sn
-            inner join `tabItem` i on i.name = sn.item_code
-            set sn.rms_synced = 1
-            where i.item_group in %(groups)s
-            """,
-            {"groups": tuple(groups)},
-        )
+    for doctype in doctypes or list(SYNC_MAP):
 
-    for doctype in doctypes or [d for d in SYNC_MAP if d != "Serial No"]:
+        # Vehicles are marked through rms_synced above, never by log rows.
+        if doctype == "Serial No":
+            continue
 
         already = set(
             frappe.get_all(
@@ -1107,7 +1193,9 @@ def mark_existing_as_synced(doctypes=None):
             )
         )
 
-        for name in frappe.get_all(doctype, pluck="name"):
+        for name in frappe.get_all(
+            doctype, filters=_sync_filters(doctype), pluck="name"
+        ):
 
             if name in already:
                 continue
