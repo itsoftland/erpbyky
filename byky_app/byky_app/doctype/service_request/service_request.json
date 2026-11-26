@@ -33,13 +33,13 @@
   {
    "fieldname": "item",
    "fieldtype": "Link",
-   "label": "Item",
+   "label": "Vehicle Type",
    "options": "Item"
   },
   {
    "fieldname": "item_group",
    "fieldtype": "Link",
-   "label": "Item Group",
+   "label": "Category",
    "options": "Item Group"
   },
   {
@@ -71,7 +71,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-11-06 15:58:11.453205",
+ "modified": "2026-11-26 08:42:38.524729",
  "modified_by": "Administrator",
  "module": "Byky App",
  "name": "Service Request",

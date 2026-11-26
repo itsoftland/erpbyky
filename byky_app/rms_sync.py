@@ -204,6 +204,42 @@ SYNC_MAP = {
             "purchase_date",
         ],
     },
+
+    # Requests created by RMS itself come in through rms_inbound.py and are not
+    # echoed back. What goes to RMS is every later change (mainly status), and
+    # requests created in ERPNext. The initial load skips them: RMS does not
+    # hold ERPNext-created history to match against.
+    "Vehicle Transfer Request": {
+        "path": "/vehicle-transfer-request",
+        "fields": [
+            "name",
+            "transfer_id",
+            "vehicle_number",
+            "status",
+            "requested_on",
+            "source_branch",
+            "source_warehouse",
+            "target_branch",
+            "target_warehouse",
+        ],
+        "skip_initial_load": True,
+    },
+
+    "Service Request": {
+        "path": "/service-request",
+        "fields": [
+            "name",
+            "service_id",
+            "vehicle_number",
+            "status",
+            "complaint_type",
+            "complaint_details",
+            "brand",
+            "vehicle_type",
+            "category",
+        ],
+        "skip_initial_load": True,
+    },
 }
 
 # Minutes to wait after attempt 1, 2, 3 ... (the last value repeats).
@@ -415,6 +451,10 @@ def on_insert(doc, method=None):
     if doc.doctype not in SYNC_MAP or doc.doctype == "Serial No":
         return
 
+    # A record created by RMS itself (rms_inbound.py) is already in RMS.
+    if frappe.flags.get("rms_inbound"):
+        return
+
     if not should_sync(doc):
         return
 
@@ -470,6 +510,28 @@ def on_update(doc, method=None):
         action = "deactivate"
     else:
         action = "update"
+
+    _enqueue_change(doc, action)
+
+
+def notify_rms(doctype, name, action="update"):
+    """
+    Send the current state of a record to RMS.
+
+    Use this after code changes a field with frappe.db.set_value or db_set
+    (for example closing a Service Request when a Service Entry is submitted).
+    Those writes do not run on_update, so RMS would never hear of the change.
+
+        from byky_app.rms_sync import notify_rms
+        notify_rms("Service Request", service_request_name)
+    """
+    if doctype not in SYNC_MAP:
+        return
+
+    doc = frappe.get_doc(doctype, name)
+
+    if not should_sync(doc):
+        return
 
     _enqueue_change(doc, action)
 
@@ -1119,6 +1181,9 @@ def export_masters():
 
     for doctype, cfg in SYNC_MAP.items():
 
+        if cfg.get("skip_initial_load"):
+            continue
+
         meta = frappe.get_meta(doctype)
 
         fields = [
@@ -1185,6 +1250,9 @@ def mark_existing_as_synced(doctypes=None):
         if doctype == "Serial No":
             continue
 
+        if SYNC_MAP.get(doctype, {}).get("skip_initial_load"):
+            continue
+
         already = set(
             frappe.get_all(
                 "RMS Sync Log",
@@ -1213,6 +1281,32 @@ def mark_existing_as_synced(doctypes=None):
             }).insert(ignore_permissions=True)
 
     frappe.db.commit()
+
+
+def check_sync_map():
+    """
+    bench --site <site> execute byky_app.rms_sync.check_sync_map
+
+    Lists every field in SYNC_MAP that does not exist on its DocType. A missing
+    field would otherwise be sent to RMS as an empty value without any error.
+    """
+    problems = 0
+
+    for doctype, cfg in SYNC_MAP.items():
+
+        if not frappe.db.exists("DocType", doctype):
+            print(f"MISSING DocType: {doctype}")
+            problems += 1
+            continue
+
+        meta = frappe.get_meta(doctype)
+
+        for field in cfg["fields"]:
+            if field != "name" and not meta.has_field(field):
+                print(f"MISSING field: {doctype}.{field}")
+                problems += 1
+
+    print("All fields found." if not problems else f"{problems} problem(s).")
 
 
 # ============================================================

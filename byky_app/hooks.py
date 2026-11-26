@@ -23,10 +23,11 @@ fixtures = [
     },
 
     # Role
+    # "RMS Integration" is the role of the user RMS calls the inbound API with.
     {
         "dt": "Role",
         "filters": [
-            ["name", "=", "Byky Role"]
+            ["name", "in", ["Byky Role", "RMS Integration"]]
         ]
     },
 
@@ -49,6 +50,7 @@ fixtures = [
                 "Maintenance",
                 "Scrap Sales",
                 "Reports",
+                "Administrator"
             ]]
         ]
     },
@@ -70,6 +72,9 @@ fixtures = [
     },
 
     # Client Scripts
+    # ("Branch - Create Branch Warehouse" was removed from this list: it held
+    #  Python code, which breaks the Branch form in the browser. The warehouse
+    #  is created on the server by byky_app.branch_warehouse.)
     {
         "dt": "Client Script",
         "filters": [
@@ -101,7 +106,6 @@ fixtures = [
                 "Vehicle Tear Down Request - Create Tear Down Button",
                 "Service Entry - Filter Spares by Box Items",
                 "Service Entry - Vehicle Transfer",
-                "Branch - Create Branch Warehouse",
                 "Stock Entry List - Posting Date Range",
                 "Purchase Order - Supplier Wise Items",
                 "Hide Purchase Receipt Until Invoiced",
@@ -114,6 +118,9 @@ fixtures = [
                 "Stock Entry - Box Name Popup",
                 "Work Order - Item Storage Location Filters",
                 "Purchase Order – Tax Percentage Display",
+                "Serial No - Auto Production Date",
+                "WO Storage Rows by Quantity",
+                "SE Storage Rows by Quantity",
             ]]
         ]
     },
@@ -194,7 +201,11 @@ doc_events = {
     },
 
     "Serial No": {
-        "before_validate": "byky_app.serial_no_production_date.set_production_date",
+        "before_insert": "byky_app.serial_no.set_production_date",
+    },
+
+    "Serial and Batch Bundle": {
+        "on_submit": "byky_app.serial_no.set_production_date_from_bundle",
     },
 
     # the RMS hooks are added to this one by the loop at the bottom of the block
@@ -206,18 +217,41 @@ doc_events = {
     "Box Entry": {"on_update": "byky_app.box_entry.sync_box_item"},
     "Vehicle Type": {"on_update": "byky_app.vehicle_type.sync_vehicle_item"},
     "Spares": {"on_update": "byky_app.spares.sync_spare_item"},
+
+    "*": {
+        "after_insert": "byky_app.user_activity_log.on_create",
+        "on_update": "byky_app.user_activity_log.on_update",
+        "on_update_after_submit": "byky_app.user_activity_log.on_update_after_submit",
+        "on_submit": "byky_app.user_activity_log.on_submit",
+        "on_cancel": "byky_app.user_activity_log.on_cancel",
+        "on_trash": "byky_app.user_activity_log.on_trash",
+    },
+
 }
+
+# Without this, any document that has log entries can't be deleted
+# ("linked with BYKY User Activity Log")
+ignore_links_on_delete = ["BYKY User Activity Log"]
 
 override_whitelisted_methods = {
     "erpnext.accounts.doctype.purchase_invoice.purchase_invoice.make_purchase_receipt":
         "byky_app.purchase_invoice.make_purchase_receipt",
+    "frappe.desk.form.save.savedocs": "byky_app.user_activity_log.savedocs",
 }
+
+app_include_js = [
+    # ... existing entries ...
+    "/assets/byky_app/js/user_activity_log.js",
+]
 
 # ---------------------------------------------------------------------------
 # ERP TO RMS SYNC
 # ---------------------------------------------------------------------------
-# Master data synchronised to RMS (Serial No is NOT here: vehicles go through
+# DocTypes synchronised to RMS (Serial No is NOT here: vehicles go through
 # the Manufacture submit hook and the 5-minute sweep).
+# Vehicle Transfer Request and Service Request: requests created by RMS come in
+# through byky_app.rms_inbound and are not echoed back; later changes (status)
+# and requests created in ERPNext are sent.
 _RMS_MASTERS = [
     "Country",
     "State",
@@ -232,6 +266,8 @@ _RMS_MASTERS = [
     "Item Group",
     "Item",
     "Asset",
+    "Vehicle Transfer Request",
+    "Service Request",
 ]
 
 _RMS_EVENTS = {

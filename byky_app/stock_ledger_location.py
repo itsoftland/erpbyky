@@ -314,12 +314,13 @@ def _validate(doc, rows):
         combination = (item, warehouse)
 
         if combination not in moves:
+            allowed = sorted({w for (i, w) in moves if i == item})
             frappe.throw(
                 _(
-                    "Row {0} (Storage Location): item {1} with warehouse "
+                    "Row {0} (Finished Item Storage): item {1} with warehouse "
                     "{2} is not present in the Items table of this "
-                    "Stock Entry."
-                ).format(row.idx, item, warehouse)
+                    "Stock Entry. Warehouses in the Items table for this item: {3}."
+                ).format(row.idx, item, warehouse, ", ".join(allowed) or _("none"))
             )
 
         # Finished product: custom shelf information is optional
