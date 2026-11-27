@@ -1357,3 +1357,85 @@ def migrate_legacy_logs():
     )
 
     frappe.db.commit()
+    
+    
+# ============================================================
+# VEHICLE TRANSFER REQUEST -> STOCK ENTRY (the "Create > Stock Entry" button)
+# ============================================================
+
+VEHICLE_TRANSFER_ENTRY_TYPE = "Vehicle Transfer"
+
+# fieldname of the "Is Warehouse storage" checkbox on Stock Entry
+# (the first one that exists on the DocType is used)
+VEHICLE_TRANSFER_STORAGE_FLAGS = (
+    "custom_is_warehouse_storage",
+    "custom_is_warehouse_storage_",
+)
+
+
+@frappe.whitelist()
+def make_stock_entry(source_name):
+    """
+    Build an UNSAVED Stock Entry from a Vehicle Transfer Request. The form
+    opens filled in; the user checks it and saves.
+    """
+    request = frappe.get_doc("Vehicle Transfer Request", source_name)
+    request.check_permission("read")
+
+    required = (
+        ("source_warehouse", "Source Warehouse"),
+        ("target_warehouse", "Target Warehouse"),
+        ("vehicle_type", "Vehicle Type"),
+        ("vehicle_number", "Vehicle Number"),
+    )
+
+    missing = [label for field, label in required if not request.get(field)]
+
+    if missing:
+        frappe.throw(f"The request has no {', '.join(missing)}.")
+
+    entry_type = VEHICLE_TRANSFER_ENTRY_TYPE
+    purpose = frappe.db.get_value("Stock Entry Type", entry_type, "purpose")
+
+    if purpose is None and not frappe.db.exists("Stock Entry Type", entry_type):
+        frappe.throw(f"Stock Entry Type '{entry_type}' does not exist.")
+
+    meta = frappe.get_meta("Stock Entry")
+    flag = next(
+        (f for f in VEHICLE_TRANSFER_STORAGE_FLAGS if meta.has_field(f)), None
+    )
+
+    if not flag:
+        frappe.throw(
+            "Stock Entry has no 'Is Warehouse storage' field. Tried: "
+            + ", ".join(VEHICLE_TRANSFER_STORAGE_FLAGS)
+            + ". Put the real fieldname in VEHICLE_TRANSFER_STORAGE_FLAGS."
+        )
+
+    entry = frappe.new_doc("Stock Entry")
+    entry.stock_entry_type = entry_type
+    entry.purpose = purpose or "Material Transfer"
+    entry.company = frappe.db.get_value("Warehouse", request.source_warehouse, "company")
+    entry.set(flag, 1)
+
+    # also how the button finds an earlier Stock Entry for this request
+    entry.remarks = (
+        f"Vehicle Transfer Request: {request.name} "
+        f"({request.source_branch} to {request.target_branch})"
+    )
+
+    row = {
+        "item_code": request.vehicle_type,
+        "qty": 1,
+        "s_warehouse": request.source_warehouse,
+        "t_warehouse": request.target_warehouse,
+        "serial_no": request.vehicle_number,
+    }
+
+    # ERPNext v15: serial numbers typed in the row, no bundle needed first
+    if frappe.get_meta("Stock Entry Detail").has_field("use_serial_batch_fields"):
+        row["use_serial_batch_fields"] = 1
+
+    entry.append("items", row)
+
+    return entry

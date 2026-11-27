@@ -121,6 +121,7 @@ fixtures = [
                 "Serial No - Auto Production Date",
                 "WO Storage Rows by Quantity",
                 "SE Storage Rows by Quantity",
+                "Vehicle Transfer Request - Create Stock Entry",
             ]]
         ]
     },
