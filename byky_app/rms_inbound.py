@@ -222,7 +222,7 @@ def _handle(key):
             and values.get(branch_field)
             and branch_field not in bad_branches
         ):
-            warehouse = frappe.db.get_value("Branch", values[branch_field], "warehouse")
+            warehouse = frappe.db.get_value("Branch", values[branch_field], "custom_warehouse")
 
             if warehouse:
                 values[warehouse_field] = warehouse

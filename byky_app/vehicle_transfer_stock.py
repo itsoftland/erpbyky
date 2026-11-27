@@ -1,3 +1,5 @@
+import re
+
 import frappe
 
 # Stock Entry Type used for vehicle transfers (Stock Entry -> Stock Entry Type)
@@ -6,6 +8,13 @@ ENTRY_TYPE = "Vehicle Transfer"
 # fieldname of the "Is Warehouse storage" checkbox on Stock Entry
 # (the first one that exists on the DocType is used)
 STORAGE_FLAGS = ("custom_is_warehouse_storage", "custom_is_warehouse_storage_")
+
+# Link field on Stock Entry pointing back to the Vehicle Transfer Request
+REQUEST_LINK_FIELD = "vehicle_transfer_request"
+
+# Status values on Vehicle Transfer Request (match your Status field options)
+STATUS_ON_SUBMIT = "Completed"  # when the Stock Entry is submitted
+STATUS_ON_CANCEL = "Approved"   # when the Stock Entry is cancelled
 
 
 @frappe.whitelist()
@@ -68,6 +77,9 @@ def make_stock_entry(source_name):
     entry.company = frappe.db.get_value("Warehouse", request.source_warehouse, "company")
     entry.set(flag, 1)
 
+    if meta.has_field(REQUEST_LINK_FIELD):
+        entry.set(REQUEST_LINK_FIELD, request.name)
+
     # also how the button finds an earlier Stock Entry for this request
     entry.remarks = (
         f"Vehicle Transfer Request: {request.name} "
@@ -93,3 +105,22 @@ def make_stock_entry(source_name):
     entry.append("items", row)
 
     return entry
+
+
+def update_request_status(doc, method=None):
+    """Stock Entry on_submit / on_cancel -> update the Vehicle Transfer Request."""
+    if doc.stock_entry_type != ENTRY_TYPE:
+        return
+
+    name = doc.get(REQUEST_LINK_FIELD)
+
+    # fallback for entries created before the link field existed
+    if not name and doc.remarks:
+        match = re.search(r"Vehicle Transfer Request:\s*(\S+)", doc.remarks)
+        name = match.group(1) if match else None
+
+    if not name or not frappe.db.exists("Vehicle Transfer Request", name):
+        return
+
+    status = STATUS_ON_SUBMIT if method == "on_submit" else STATUS_ON_CANCEL
+    frappe.db.set_value("Vehicle Transfer Request", name, "status", status)

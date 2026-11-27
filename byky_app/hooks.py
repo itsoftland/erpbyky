@@ -147,10 +147,12 @@ doc_events = {
             "byky_app.stock_ledger_location.apply_locations_to_ledger",
             "byky_app.finished_item_storage.on_submit",
             "byky_app.rms_sync.on_manufacture_submit",
+            "byky_app.vehicle_transfer_stock.update_request_status",
         ],
         "on_cancel": [
             "byky_app.storage_location.reverse_item_storage_locations",
             "byky_app.finished_item_storage.on_cancel",
+            "byky_app.vehicle_transfer_stock.update_request_status",
         ],
     },
 
