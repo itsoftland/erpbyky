@@ -122,6 +122,7 @@ fixtures = [
                 "WO Storage Rows by Quantity",
                 "SE Storage Rows by Quantity",
                 "Vehicle Transfer Request - Create Stock Entry",
+                "Serial No Warehouse Editable",
             ]]
         ]
     },
@@ -203,8 +204,9 @@ doc_events = {
         ],
     },
 
-    "Serial No": {
+   "Serial No": {
         "before_insert": "byky_app.serial_no.set_production_date",
+        "before_validate": "byky_app.serial_no.allow_warehouse_change",
     },
 
     "Serial and Batch Bundle": {

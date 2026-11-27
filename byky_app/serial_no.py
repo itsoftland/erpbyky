@@ -2,6 +2,14 @@ import frappe
 from frappe.utils import today
 
 
+def allow_warehouse_change(doc, method=None):
+    """Serial No: before_validate
+    Skips ERPNext's "Warehouse cannot be changed" check on manual
+    edits and Data Import.
+    """
+    doc.via_stock_ledger = True
+
+
 def set_production_date(doc, method=None):
     """Serial No: before_insert
     Fills today's date when a Serial No is created from the form or API.

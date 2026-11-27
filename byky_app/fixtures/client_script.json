@@ -460,5 +460,16 @@
   "name": "Vehicle Transfer Request - Create Stock Entry",
   "script": "// Client Script: \"Vehicle Transfer Request - Create Stock Entry\"\n// DocType: Vehicle Transfer Request    Enabled: yes\nfrappe.ui.form.on(\"Vehicle Transfer Request\", {\n    refresh(frm) {\n        if (frm.is_new() || frm.doc.status !== \"Open\") {\n            return;\n        }\n\n        frm.add_custom_button(__(\"Stock Entry\"), () => {\n            if (frm.is_dirty()) {\n                frappe.msgprint(__(\"Save the request first.\"));\n                return;\n            }\n\n            const marker = `Vehicle Transfer Request: ${frm.doc.name} (`;\n\n            const open_stock_entry = () => {\n                frappe.model.open_mapped_doc({\n                    method: \"byky_app.vehicle_transfer_stock.make_stock_entry\",\n                    frm: frm,\n                });\n            };\n\n            // warn when a Stock Entry was already made for this request\n            frappe.db\n                .get_list(\"Stock Entry\", {\n                    filters: {\n                        remarks: [\"like\", `%${marker}%`],\n                        docstatus: [\"<\", 2],\n                    },\n                    fields: [\"name\"],\n                    limit: 1,\n                })\n                .then((rows) => {\n                    if (rows.length) {\n                        frappe.confirm(\n                            __(\"Stock Entry {0} already exists for this request. Create another one?\", [rows[0].name]),\n                            open_stock_entry\n                        );\n                    } else {\n                        open_stock_entry();\n                    }\n                });\n        }, __(\"Create\"));\n    },\n});",
   "view": "Form"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Serial No",
+  "enabled": 1,
+  "modified": "2026-11-27 13:47:37.491422",
+  "module": "Byky App",
+  "name": "Serial No Warehouse Editable",
+  "script": "frappe.ui.form.on(\"Serial No\", {\n    refresh(frm) {\n        frm.set_df_property(\"warehouse\", \"read_only\", 0);\n    }\n});",
+  "view": "Form"
  }
 ]
